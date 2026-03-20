@@ -57,6 +57,7 @@ import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
+import { supabase } from '@/lib/supabase';
 
 interface RichTextEditorProps {
   content: string;

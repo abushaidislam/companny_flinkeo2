@@ -86,26 +86,30 @@ CREATE POLICY "Authenticated users can manage blogs"
   USING (true) 
   WITH CHECK (true);
 
--- Create storage bucket for blog images (run in Supabase dashboard SQL editor)
--- INSERT INTO storage.buckets (id, name, public) VALUES ('blog-images', 'blog-images', true);
+-- Create storage bucket for blog images
+INSERT INTO storage.buckets (id, name, public) VALUES ('blog-images', 'blog-images', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies for blog-images bucket
 -- Policy: Allow public read access
--- CREATE POLICY "Public can view blog images" 
---   ON storage.objects FOR SELECT 
---   USING (bucket_id = 'blog-images');
+DROP POLICY IF EXISTS "Public can view blog images" ON storage.objects;
+CREATE POLICY "Public can view blog images" 
+  ON storage.objects FOR SELECT 
+  USING (bucket_id = 'blog-images');
 
 -- Policy: Allow authenticated users to upload
--- CREATE POLICY "Authenticated users can upload blog images" 
---   ON storage.objects FOR INSERT 
---   TO authenticated 
---   WITH CHECK (bucket_id = 'blog-images');
+DROP POLICY IF EXISTS "Authenticated users can upload blog images" ON storage.objects;
+CREATE POLICY "Authenticated users can upload blog images" 
+  ON storage.objects FOR INSERT 
+  TO authenticated 
+  WITH CHECK (bucket_id = 'blog-images');
 
 -- Policy: Allow authenticated users to delete their uploads
--- CREATE POLICY "Authenticated users can delete blog images" 
---   ON storage.objects FOR DELETE 
---   TO authenticated 
---   USING (bucket_id = 'blog-images');
+DROP POLICY IF EXISTS "Authenticated users can delete blog images" ON storage.objects;
+CREATE POLICY "Authenticated users can delete blog images" 
+  ON storage.objects FOR DELETE 
+  TO authenticated 
+  USING (bucket_id = 'blog-images');
 
 -- Create contracts table (Inbox system for study/tutoring contracts)
 CREATE TABLE IF NOT EXISTS contracts (
