@@ -1,95 +1,220 @@
-# Welcome to your Lovable project
+# Flinke - Digital Agency Website
 
-## Project info
+A modern, premium digital agency website built with React, TypeScript, and Tailwind CSS. Features a complete blog system with admin panel, contact forms, portfolio showcase, and dynamic animations.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![Flinke Preview](public/favicon.svg)
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+### Landing Page Sections
+- **Hero Section** - Animated hero with gradient background, statistics, and dashboard preview
+- **Trust Badges** - Client logos and trust indicators
+- **Portfolio** - Showcase of completed projects with filtering
+- **Features** - Service offerings with icons and descriptions
+- **How It Works** - Process timeline explanation
+- **Testimonials** - Client reviews and ratings
+- **Pricing** - Service packages and pricing tiers
+- **FAQ** - Frequently asked questions with accordion
+- **Blog** - Latest blog posts preview
+- **Newsletter** - Email subscription form
+- **Tech Stack** - Technologies and tools used
+- **Cost Calculator** - Interactive pricing estimator
+- **Contact Form** - Multi-step contact form
 
-**Use Lovable**
+### Blog System
+- Blog listing page with search and filtering
+- Individual blog post pages with rich content
+- Supabase backend for content management
+- Admin panel for blog creation and editing
+- Reading time estimation
+- Writer profiles and avatars
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Admin Panel
+- Secure login system
+- Blog management dashboard
+- Rich text editor with TipTap
+- Cover image upload
+- Draft and publish workflow
 
-Changes made via Lovable will be committed automatically to this repo.
+### Additional Pages
+- **Team Page** - Team members showcase
+- **Contact Page** - Contact form with validation
+- **FAQ Page** - Detailed FAQ section
 
-**Use your preferred IDE**
+## Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS 3.4
+- **UI Components**: shadcn/ui + Radix UI primitives
+- **Animation**: Framer Motion
+- **Backend**: Supabase
+- **State Management**: TanStack Query (React Query)
+- **Routing**: React Router DOM
+- **Forms**: React Hook Form + Zod validation
+- **Rich Text**: TipTap Editor
+- **Icons**: Lucide React
+- **Testing**: Vitest + Playwright
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Project Structure
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── app/                    # App-specific components
+├── assets/                 # Static assets (images, fonts)
+├── components/
+│   ├── admin/             # Admin panel components
+│   ├── landing/           # Landing page sections
+│   └── ui/                # Reusable UI components (shadcn)
+├── contexts/              # React contexts
+├── data/                  # Static data files
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utility functions & configurations
+│   ├── supabase.ts       # Supabase client setup
+│   └── utils.ts          # Helper utilities
+├── pages/                 # Route-level page components
+│   ├── Index.tsx         # Landing page
+│   ├── BlogList.tsx      # Blog listing
+│   ├── BlogDetail.tsx    # Blog post detail
+│   ├── Contact.tsx       # Contact page
+│   ├── Team.tsx          # Team page
+│   ├── AdminLogin.tsx    # Admin authentication
+│   └── ...
+├── App.tsx               # Main app with routing
+└── main.tsx              # Entry point
 ```
 
-**Edit a file directly in GitHub**
+## Getting Started
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Prerequisites
+- Node.js 18+ 
+- npm, yarn, or pnpm
 
-**Use GitHub Codespaces**
+### Installation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+# Clone the repository
+git clone <YOUR_GIT_URL>
 
-## What technologies are used for this project?
+# Navigate to project directory
+cd companny_flinkeo
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-### Deploy on Vercel
-
-This repo is configured for Vercel with a `vercel.json` file for Vite + SPA routing.
-
-1. Push this repository to GitHub/GitLab/Bitbucket.
-2. Import the project in Vercel.
-3. Vercel will use:
-   - Install command: `npm install`
-   - Build command: `npm run build`
-   - Output directory: `dist`
-4. Click **Deploy**.
-
-For local verification before deploying:
-
-```sh
+# Install dependencies
 npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials
+```
+
+### Environment Variables
+
+Create a `.env` file with the following:
+
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Development
+
+```bash
+# Start development server
+npm run dev
+
+# Run tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+### Build for Production
+
+```bash
+# Build the project
 npm run build
+
+# Preview production build locally
 npm run preview
 ```
 
-### Lovable publish
+## Deployment
 
-You can also open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Vercel (Recommended)
 
-## Can I connect a custom domain to my Lovable project?
+1. Push repository to GitHub
+2. Import project in [Vercel](https://vercel.com)
+3. Set environment variables in Vercel dashboard
+4. Deploy
 
-Yes, you can!
+Build settings:
+- **Install Command**: `npm install`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Other Platforms
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The `dist` folder contains the static build output ready for deployment on any static hosting platform.
+
+## Database Schema
+
+The project uses Supabase with the following main tables:
+
+### blogs
+- `id` (uuid, primary key)
+- `slug` (text, unique)
+- `headline` (text)
+- `excerpt` (text)
+- `content` (jsonb)
+- `cover_image` (text)
+- `tag` (text)
+- `reading_time` (integer)
+- `writer` (text)
+- `writer_avatar` (text)
+- `status` (enum: draft, published)
+- `published_at` (timestamp)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+See `supabase/schema.sql` for complete schema definition.
+
+## Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run build:dev` | Build in development mode |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run tests once |
+| `npm run test:watch` | Run tests in watch mode |
+
+## Key Dependencies
+
+- **@radix-ui/*** - Headless UI primitives
+- **@supabase/supabase-js** - Supabase client
+- **@tanstack/react-query** - Server state management
+- **@tiptap/*** - Rich text editor
+- **framer-motion** - Animation library
+- **lucide-react** - Icon library
+- **react-hook-form** - Form management
+- **tailwindcss** - CSS framework
+- **zod** - Schema validation
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Submit a pull request
+
+## License
+
+This project is private and proprietary. All rights reserved.
+
+---
+
+Built with by the Flinke Team

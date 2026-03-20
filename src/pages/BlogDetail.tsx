@@ -12,6 +12,7 @@ import { ArticleCard } from '@/components/ui/blog-post-card';
 import renderMathInElement from 'katex/contrib/auto-render';
 import 'katex/dist/katex.min.css';
 import Chart from 'chart.js/auto';
+import type { ChartData, ChartType } from 'chart.js';
 import mermaid from 'mermaid';
 
 interface Blog {
@@ -295,8 +296,8 @@ export default function BlogDetail() {
 
       try {
         const chart = new Chart(canvas, {
-          type: (spec.type as string) || 'line',
-          data: spec.data as Chart.ChartData,
+          type: (spec.type as ChartType) || 'line',
+          data: spec.data as ChartData,
           options: {
             responsive: true,
             maintainAspectRatio: false,
