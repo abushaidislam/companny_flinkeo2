@@ -374,6 +374,55 @@ export function RichTextEditor({
     }
   }, [editor]);
 
+  // Handle image upload to Supabase storage
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!editor) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    const loadingToast = toast.loading('Uploading image...');
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `blog-images/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('blog-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(filePath);
+
+      // Insert image into editor
+      editor.chain().focus().setImage({ src: publicUrl }).run();
+      toast.success('Image uploaded successfully', { id: loadingToast });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image. Using base64 fallback...', { id: loadingToast });
+      
+      // Fallback to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        editor.chain().focus().setImage({ src: base64 }).run();
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [editor]);
+
   const uploadImage = useCallback(async () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -381,22 +430,43 @@ export function RichTextEditor({
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file && editor) {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error('Image size should be less than 5MB');
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const base64 = e.target?.result as string;
-          editor.chain().focus().setImage({ src: base64 }).run();
-          toast.success('Image uploaded successfully');
-        };
-        reader.readAsDataURL(file);
+        await handleImageUpload(file);
       }
     };
     input.click();
-  }, [editor]);
+  }, [editor, handleImageUpload]);
+
+  // Handle drag and drop
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile && editor) {
+      await handleImageUpload(imageFile);
+    }
+  }, [editor, handleImageUpload]);
+
+  // Handle paste
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    
+    if (imageItem && editor) {
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (file) {
+        await handleImageUpload(file);
+      }
+    }
+  }, [editor, handleImageUpload]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -771,6 +841,9 @@ export function RichTextEditor({
               className={`${viewMode === 'split' ? 'border-r' : 'w-full'} ${viewMode === 'edit' && !isFullscreen ? 'min-h-[400px]' : 'h-full'} overflow-auto`}
               style={{ width: viewMode === 'split' ? `${splitPaneWidth}%` : '100%' }}
               onScroll={handleEditorScroll}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onPaste={handlePaste}
             >
               {showCodeView ? (
                 <textarea
