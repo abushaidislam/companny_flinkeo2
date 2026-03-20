@@ -45,7 +45,10 @@ import {
   Columns,
   Monitor,
   Tablet,
-  Smartphone
+  Smartphone,
+  GripVertical,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -130,8 +133,11 @@ export function RichTextEditor({
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [splitPaneWidth, setSplitPaneWidth] = useState(50); // percentage
+  const [isDragging, setIsDragging] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -183,18 +189,71 @@ export function RichTextEditor({
     }
   }, [editor]);
 
-  // Sync scrolling between editor and preview
-  const handleEditorScroll = useCallback(() => {
-    if (viewMode !== 'split' || !editorRef.current || !previewRef.current) return;
+  // Bidirectional sync scrolling between editor and preview
+  const syncScroll = useCallback((source: 'editor' | 'preview') => {
+    if (viewMode !== 'split') return;
     
-    const editorEl = editorRef.current.querySelector('.ProseMirror');
+    const editorEl = editorRef.current?.querySelector('.ProseMirror');
     const previewEl = previewRef.current;
     
     if (!editorEl || !previewEl) return;
+
+    const editorScrollable = editorEl as HTMLElement;
+    const previewScrollable = previewEl as HTMLElement;
     
-    const scrollRatio = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
-    previewEl.scrollTop = scrollRatio * (previewEl.scrollHeight - previewEl.clientHeight);
+    if (source === 'editor') {
+      const scrollRatio = editorScrollable.scrollTop / (editorScrollable.scrollHeight - editorScrollable.clientHeight);
+      previewScrollable.scrollTop = scrollRatio * (previewScrollable.scrollHeight - previewScrollable.clientHeight);
+    } else {
+      const scrollRatio = previewScrollable.scrollTop / (previewScrollable.scrollHeight - previewScrollable.clientHeight);
+      editorScrollable.scrollTop = scrollRatio * (editorScrollable.scrollHeight - editorScrollable.clientHeight);
+    }
   }, [viewMode]);
+
+  const handleEditorScroll = useCallback(() => syncScroll('editor'), [syncScroll]);
+  const handlePreviewScroll = useCallback(() => syncScroll('preview'), [syncScroll]);
+
+  // Resize handlers for split pane
+  const handleResizeStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const container = containerRef.current;
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    
+    // Constrain between 20% and 80%
+    setSplitPaneWidth(Math.max(20, Math.min(80, percentage)));
+  }, [isDragging]);
+
+  const handleResizeEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging, handleResizeMove, handleResizeEnd]);
 
   const processedPreviewContent = useCallback(() => {
     if (!content) return '';
@@ -631,12 +690,16 @@ export function RichTextEditor({
         </div>
 
         {/* Content Area */}
-        <div className={`flex ${viewMode === 'split' ? 'flex-row' : 'flex-col'} ${isFullscreen ? 'h-[calc(100vh-120px)]' : ''}`}>
+        <div 
+          ref={containerRef}
+          className={`flex ${viewMode === 'split' ? 'flex-row' : 'flex-col'} ${isFullscreen ? 'h-[calc(100vh-120px)]' : ''} relative`}
+        >
           {/* Editor */}
           {showEditor && (
             <div 
               ref={editorRef}
-              className={`${viewMode === 'split' ? 'w-1/2 border-r' : 'w-full'} ${viewMode === 'edit' && !isFullscreen ? 'min-h-[400px]' : 'h-full'}`}
+              className={`${viewMode === 'split' ? 'border-r' : 'w-full'} ${viewMode === 'edit' && !isFullscreen ? 'min-h-[400px]' : 'h-full'} overflow-auto`}
+              style={{ width: viewMode === 'split' ? `${splitPaneWidth}%` : '100%' }}
               onScroll={handleEditorScroll}
             >
               <EditorContent 
@@ -646,11 +709,26 @@ export function RichTextEditor({
             </div>
           )}
 
+          {/* Resize Handle - Only in split mode */}
+          {viewMode === 'split' && (
+            <div
+              className={`absolute top-0 bottom-0 w-4 cursor-col-resize z-10 flex items-center justify-center group ${isDragging ? 'bg-primary/20' : 'hover:bg-primary/10'} transition-colors`}
+              style={{ left: `calc(${splitPaneWidth}% - 8px)` }}
+              onMouseDown={handleResizeStart}
+            >
+              <div className={`w-1 h-8 rounded-full ${isDragging ? 'bg-primary' : 'bg-border group-hover:bg-primary/50'} transition-colors`}>
+                <GripVertical className="w-3 h-3 text-muted-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+          )}
+
           {/* Preview */}
           {showPreview && (
             <div 
               ref={previewRef}
-              className={`${viewMode === 'split' ? 'w-1/2' : 'w-full'} bg-muted/30 overflow-auto`}
+              className="bg-muted/30 overflow-auto"
+              style={{ width: viewMode === 'split' ? `${100 - splitPaneWidth}%` : '100%' }}
+              onScroll={handlePreviewScroll}
             >
               <div className={`${deviceWidthClass} bg-background min-h-full`}>
                 {/* Blog Header */}
