@@ -9,8 +9,6 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import type { ReactNode } from 'react';
 
-// Re-export utilities from separate file to avoid fast refresh issues
-export { detectContentType, isMarkdownContent, markdownToHtml } from './content-utils';
 /**
  * ReactMarkdown wrapper with full plugin support
  */

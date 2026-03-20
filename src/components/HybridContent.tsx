@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { detectContentType, MarkdownRenderer } from '@/lib/hybrid-renderer';
+import { MarkdownRenderer } from '@/lib/hybrid-renderer';
+import { detectContentType } from '@/lib/content-utils';
 import renderMathInElement from 'katex/contrib/auto-render';
 import 'katex/dist/katex.min.css';
 import Chart from 'chart.js/auto';

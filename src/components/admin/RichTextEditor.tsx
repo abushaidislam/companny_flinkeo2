@@ -61,7 +61,7 @@ import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 import { HybridContent } from '@/components/HybridContent';
 import { supabase } from '@/lib/supabase';
-import { detectContentType } from '@/lib/hybrid-renderer';
+import { detectContentType } from '@/lib/content-utils';
 import mermaid from 'mermaid';
 
 interface RichTextEditorProps {
