@@ -17,7 +17,6 @@ import ThemeToggle from '@/components/ui/theme-toggle';
 import {
   CodeIcon,
   GlobeIcon,
-  LayersIcon,
   Palette,
   Users,
   Star,
@@ -30,6 +29,8 @@ import {
   PenTool,
   Smartphone,
   Search,
+  Building2,
+  Briefcase,
 } from 'lucide-react';
 
 type LinkItem = {
@@ -41,49 +42,49 @@ type LinkItem = {
 
 const serviceLinks: LinkItem[] = [
   {
+    title: 'All Services',
+    href: '/services',
+    description: 'View our complete service offerings',
+    icon: GlobeIcon,
+  },
+  {
     title: 'Web Development',
-    href: '#features',
+    href: '/services#web-development',
     description: 'Custom websites built with modern technologies',
     icon: CodeIcon,
   },
   {
     title: 'UI/UX Design',
-    href: '#features',
+    href: '/services#ui-ux-design',
     description: 'Beautiful interfaces that users love',
     icon: PenTool,
   },
   {
     title: 'Mobile-First Design',
-    href: '#features',
+    href: '/services#mobile-apps',
     description: 'Responsive experiences across all devices',
     icon: Smartphone,
   },
   {
     title: 'Brand Identity',
-    href: '#features',
+    href: '/services#branding',
     description: 'Cohesive visual identities for your brand',
     icon: Palette,
   },
   {
     title: 'SEO & Performance',
-    href: '#features',
+    href: '/services#growth-marketing',
     description: 'Optimize speed, reach, and conversions',
     icon: Search,
-  },
-  {
-    title: 'Web Applications',
-    href: '#features',
-    description: 'Full-stack SaaS and dashboard solutions',
-    icon: LayersIcon,
   },
 ];
 
 const companyLinks: LinkItem[] = [
   {
     title: 'About Us',
-    href: '#how-it-works',
+    href: '/#how-it-works',
     description: 'Learn more about our story and team',
-    icon: Users,
+    icon: Building2,
   },
   {
     title: 'Our Team',
@@ -93,13 +94,13 @@ const companyLinks: LinkItem[] = [
   },
   {
     title: 'Client Stories',
-    href: '#testimonials',
+    href: '/#testimonials',
     description: "See how we've helped our clients succeed",
     icon: Star,
   },
   {
     title: 'Partnerships',
-    href: '#pricing',
+    href: '/#pricing',
     icon: Handshake,
     description: 'Collaborate with us for mutual growth',
   },
@@ -135,6 +136,12 @@ function useScroll(threshold: number) {
 const Navbar = () => {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
+  const location = window.location;
+
+  // Close mobile menu on route change
+  React.useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
 
   React.useEffect(() => {
     if (open) {
@@ -159,12 +166,12 @@ const Navbar = () => {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center">
-          <a href="#" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <img src="/favicon.svg" alt="Flinke" className="h-9 w-9" />
             <span className="font-display font-bold text-lg text-foreground tracking-tight">
               Flinke
             </span>
-          </a>
+          </Link>
         </div>
 
         {/* Desktop Nav - Centered */}
@@ -185,12 +192,12 @@ const Navbar = () => {
                   <div className="border-t border-border bg-muted/50 p-3">
                     <p className="text-sm text-muted-foreground">
                       Interested?{' '}
-                      <a
-                        href="#pricing"
+                      <Link
+                        to="/services"
                         className="font-medium text-foreground underline underline-offset-4"
                       >
-                        Get a free quote
-                      </a>
+                        View all services →
+                      </Link>
                     </p>
                   </div>
                 </NavigationMenuContent>
@@ -210,14 +217,25 @@ const Navbar = () => {
                     </div>
                     <div className="flex flex-col gap-0.5 border-l border-border pl-3">
                       {companyLinks2.map((item) => (
-                        <a
-                          key={item.title}
-                          href={item.href}
-                          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/60"
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {item.title}
-                        </a>
+                        item.href.startsWith('/') ? (
+                          <Link
+                            key={item.title}
+                            to={item.href}
+                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/60"
+                          >
+                            <item.icon className="h-4 w-4" />
+                            {item.title}
+                          </Link>
+                        ) : (
+                          <a
+                            key={item.title}
+                            href={item.href}
+                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/60"
+                          >
+                            <item.icon className="h-4 w-4" />
+                            {item.title}
+                          </a>
+                        )
                       ))}
                     </div>
                   </div>
@@ -226,22 +244,22 @@ const Navbar = () => {
 
               {/* Pricing Link */}
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  href="#pricing"
+                <Link
+                  to="/#pricing"
                   className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus:bg-accent/60 focus:text-foreground focus:outline-none"
                 >
                   Pricing
-                </NavigationMenuLink>
+                </Link>
               </NavigationMenuItem>
 
               {/* Portfolio Link */}
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  href="#portfolio"
+                <Link
+                  to="/#portfolio"
                   className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus:bg-accent/60 focus:text-foreground focus:outline-none"
                 >
                   Portfolio
-                </NavigationMenuLink>
+                </Link>
               </NavigationMenuItem>
 
               {/* Contact Link */}
@@ -266,7 +284,7 @@ const Navbar = () => {
             className="text-muted-foreground hover:text-foreground"
             asChild
           >
-            <a href="#portfolio">Our Work</a>
+            <Link to="/#portfolio">Our Work</Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
             <Link to="/contact">Contact Us</Link>
@@ -289,10 +307,19 @@ const Navbar = () => {
       <MobileMenu open={open}>
         <div className="flex-1 overflow-y-auto p-6">
           <nav className="grid gap-1">
+            {/* Services Section */}
             <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Services
             </p>
-            {serviceLinks.map((link) => (
+            <Link
+              to="/services"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent/60 transition-colors bg-accent/30"
+            >
+              <GlobeIcon className="h-4 w-4" />
+              All Services
+            </Link>
+            {serviceLinks.slice(1).map((link) => (
               <a
                 key={link.title}
                 href={link.href}
@@ -330,23 +357,35 @@ const Navbar = () => {
               )
             ))}
             {companyLinks2.map((link) => (
-              <a
-                key={link.title}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
-              >
-                <link.icon className="h-4 w-4" />
-                {link.title}
-              </a>
+              link.href.startsWith('/') ? (
+                <Link
+                  key={link.title}
+                  to={link.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                >
+                  <link.icon className="h-4 w-4" />
+                  {link.title}
+                </Link>
+              ) : (
+                <a
+                  key={link.title}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                >
+                  <link.icon className="h-4 w-4" />
+                  {link.title}
+                </a>
+              )
             ))}
           </nav>
         </div>
         <div className="border-t border-border p-4 grid grid-cols-2 gap-3">
           <Button variant="outline" size="sm" asChild>
-            <a href="#portfolio" onClick={() => setOpen(false)}>
+            <Link to="/#portfolio" onClick={() => setOpen(false)}>
               Our Work
-            </a>
+            </Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
             <Link to="/contact" onClick={() => setOpen(false)}>
@@ -380,7 +419,8 @@ function ListItem({
   icon: Icon,
   href,
 }: LinkItem) {
-  const isExternalLink = href.startsWith('/');
+  // Check if it's a router link (starts with / but not //)
+  const isRouterLink = href.startsWith('/') && !href.startsWith('//');
   const content = (
     <>
       <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border bg-background">
@@ -397,7 +437,7 @@ function ListItem({
     </>
   );
 
-  if (isExternalLink) {
+  if (isRouterLink) {
     return (
       <Link
         to={href}

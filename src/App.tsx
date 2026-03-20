@@ -10,6 +10,8 @@ import Team from "./pages/Team.tsx";
 import DemoFaq from "./pages/DemoFaq.tsx";
 import BlogList from "./pages/BlogList.tsx";
 import BlogDetail from "./pages/BlogDetail.tsx";
+import ProjectDetail from "./pages/ProjectDetail.tsx";
+import Services from "./pages/Services.tsx";
 import { AdminLogin } from "./pages/AdminLogin.tsx";
 import { AdminDashboard } from "./components/admin/AdminDashboard.tsx";
 import { AdminBlogEditor } from "./components/admin/BlogEditor.tsx";
@@ -26,7 +28,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/services" element={<Services />} />
           <Route path="/demo/faq" element={<DemoFaq />} />
+          {/* Portfolio Routes */}
+          <Route path="/portfolio/:slug" element={<ProjectDetail />} />
           {/* Blog Routes */}
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:slug" element={<BlogDetail />} />
