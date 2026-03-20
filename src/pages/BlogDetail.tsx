@@ -45,6 +45,13 @@ export default function BlogDetail() {
   const contentRef = useRef<HTMLDivElement>(null);
   const [readingProgress, setReadingProgress] = useState(0);
   const chartInstancesRef = useRef<Chart[]>([]);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (slug) {
@@ -66,15 +73,23 @@ export default function BlogDetail() {
 
       if (error) throw error;
       if (!data) {
-        setError('Blog not found');
+        if (isMountedRef.current) {
+          setError('Blog not found');
+        }
         return;
       }
-      setBlog(data);
+      if (isMountedRef.current) {
+        setBlog(data);
+      }
     } catch (error) {
-      console.error('Error loading blog:', error);
-      setError('Failed to load blog');
+      if (isMountedRef.current) {
+        console.error('Error loading blog:', error);
+        setError('Failed to load blog');
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -178,6 +193,7 @@ export default function BlogDetail() {
     }
   }, [isLoading]);
 
+  // Load related blogs with cleanup protection
   useEffect(() => {
     if (!blog) return;
     const loadRelated = async () => {
@@ -196,15 +212,20 @@ export default function BlogDetail() {
 
         const { data, error } = await query;
         if (error) throw error;
-        setRelatedBlogs(data || []);
+        if (isMountedRef.current) {
+          setRelatedBlogs(data || []);
+        }
       } catch (err) {
-        console.error('Error loading related blogs:', err);
+        if (isMountedRef.current) {
+          console.error('Error loading related blogs:', err);
+        }
       }
     };
 
     loadRelated();
   }, [blog]);
 
+  // Scroll progress tracking - no dependencies needed
   useEffect(() => {
     const handleScroll = () => {
       const contentEl = contentRef.current;
@@ -224,7 +245,7 @@ export default function BlogDetail() {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [isLoading]);
+  }, []);
 
   // Render math (KaTeX) + charts + reveal animations after HTML is injected
   useEffect(() => {
@@ -348,9 +369,11 @@ export default function BlogDetail() {
 
         try {
           mermaid.render(id, raw).then(({ svg }) => {
+            if (!isMountedRef.current) return;
             container.innerHTML = svg;
             pre.parentNode?.replaceChild(container, pre);
           }).catch((err) => {
+            if (!isMountedRef.current) return;
             console.error('Mermaid render error:', err);
             container.innerHTML = `<div class="text-red-500">Failed to render diagram</div>`;
             pre.parentNode?.replaceChild(container, pre);

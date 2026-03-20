@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -33,8 +33,17 @@ export function AdminBlogEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [isReadingTimeAuto, setIsReadingTimeAuto] = useState(true);
 
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const loadBlog = async () => {
     setIsLoading(true);
+
     try {
       const { data, error } = await supabase
         .from('blogs')
@@ -43,7 +52,7 @@ export function AdminBlogEditor() {
         .single();
 
       if (error) throw error;
-      if (data) {
+      if (data && isMountedRef.current) {
         setFormData({
           headline: data.headline,
           slug: data.slug,
@@ -60,10 +69,14 @@ export function AdminBlogEditor() {
         setIsReadingTimeAuto(false); // existing value is user-controlled for edits
       }
     } catch (error) {
-      console.error('Error loading blog:', error);
-      toast.error('Failed to load blog');
+      if (isMountedRef.current) {
+        console.error('Error loading blog:', error);
+        toast.error('Failed to load blog');
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -74,11 +87,13 @@ export function AdminBlogEditor() {
   }, [isEditMode, id]);
 
   const normalizeSlug = (value: string) => {
-    return value
+    const normalized = value
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
+    // Prevent empty slug from special characters-only input
+    return normalized || 'post';
   };
 
   const estimateReadingTimeMinutes = (html: string) => {
@@ -237,11 +252,15 @@ export function AdminBlogEditor() {
 
       navigate('/admin');
     } catch (error) {
-      console.error('Error saving blog:', error);
-      // Common case: slug already exists (unique constraint)
-      toast.error(error instanceof Error && error.message.includes('unique') ? 'Slug already exists. Please choose another.' : 'Failed to save blog');
+      if (isMountedRef.current) {
+        console.error('Error saving blog:', error);
+        // Common case: slug already exists (unique constraint)
+        toast.error(error instanceof Error && error.message.includes('unique') ? 'Slug already exists. Please choose another.' : 'Failed to save blog');
+      }
     } finally {
-      setIsSaving(false);
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
     }
   };
 

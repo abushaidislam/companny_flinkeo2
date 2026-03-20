@@ -28,8 +28,6 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ content, onChange, placeholder = 'Write your blog content here...' }: RichTextEditorProps) {
-  const [isUploading, setIsUploading] = useState(false);
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -175,7 +173,6 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your bl
           variant="ghost"
           size="sm"
           onClick={addImage}
-          disabled={isUploading}
         >
           <ImageIcon className="h-4 w-4" />
         </Button>

@@ -15,6 +15,7 @@ import Services from "./pages/Services.tsx";
 import { AdminLogin } from "./pages/AdminLogin.tsx";
 import { AdminDashboard } from "./components/admin/AdminDashboard.tsx";
 import { AdminBlogEditor } from "./components/admin/BlogEditor.tsx";
+import { ProtectedRoute } from "./components/admin/ProtectedRoute.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,9 +38,9 @@ const App = () => (
           <Route path="/blog/:slug" element={<BlogDetail />} />
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/blog/new" element={<AdminBlogEditor />} />
-          <Route path="/admin/blog/edit/:id" element={<AdminBlogEditor />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/blog/new" element={<ProtectedRoute><AdminBlogEditor /></ProtectedRoute>} />
+          <Route path="/admin/blog/edit/:id" element={<ProtectedRoute><AdminBlogEditor /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
