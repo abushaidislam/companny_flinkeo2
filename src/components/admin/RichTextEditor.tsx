@@ -14,6 +14,7 @@ import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import CharacterCount from '@tiptap/extension-character-count';
+import { Mermaid } from '@syfxlin/tiptap-starter-kit';
 import { 
   Bold, 
   Italic, 
@@ -48,7 +49,8 @@ import {
   Smartphone,
   GripVertical,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Workflow
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -57,7 +59,10 @@ import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
+import { HybridContent } from '@/components/HybridContent';
 import { supabase } from '@/lib/supabase';
+import { detectContentType } from '@/lib/hybrid-renderer';
+import mermaid from 'mermaid';
 
 interface RichTextEditorProps {
   content: string;
@@ -136,12 +141,20 @@ export function RichTextEditor({
   const [charCount, setCharCount] = useState(0);
   const [splitPaneWidth, setSplitPaneWidth] = useState(50); // percentage
   const [isDragging, setIsDragging] = useState(false);
-  const [showCodeView, setShowCodeView] = useState(false);
+  type CodeMode = 'visual' | 'html' | 'mdx';
+  const [codeMode, setCodeMode] = useState<CodeMode>(() => {
+    return detectContentType(content) === 'markdown' ? 'mdx' : 'visual';
+  });
+  const codeModeRef = useRef<CodeMode>(codeMode);
   const [selection, setSelection] = useState<{ text: string; rect: DOMRect | null }>({ text: '', rect: null });
   const editorRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const codeViewRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    codeModeRef.current = codeMode;
+  }, [codeMode]);
 
   const editor = useEditor({
     extensions: [
@@ -177,9 +190,14 @@ export function RichTextEditor({
       CharacterCount.configure({
         mode: 'textSize',
       }),
+      Mermaid,
     ],
     content,
     onUpdate: ({ editor }) => {
+      // In MDX mode we edit via textarea (no TipTap sync).
+      // Guard against overwriting `content` when TipTap updates internally.
+      if (codeModeRef.current === 'mdx') return;
+
       onChange(editor.getHTML());
       setCharCount(editor.storage.characterCount.characters());
       setWordCount(editor.storage.characterCount.words());
@@ -192,6 +210,44 @@ export function RichTextEditor({
       setWordCount(editor.storage.characterCount.words());
     }
   }, [editor]);
+
+  // Keep counters in sync for MDX mode where we bypass TipTap.
+  useEffect(() => {
+    if (codeMode !== 'mdx') return;
+    const text = (content || '').trim();
+    setCharCount(text.length);
+    setWordCount(text ? text.split(/\s+/).filter(Boolean).length : 0);
+  }, [content, codeMode]);
+
+  // Render Mermaid diagrams in preview
+  useEffect(() => {
+    if (!previewRef.current) return;
+    if (viewMode !== 'preview' && viewMode !== 'split') return;
+    if (codeModeRef.current === 'mdx') return;
+    
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (!previewRef.current) return;
+      if (codeModeRef.current === 'mdx') return;
+      
+      // Initialize mermaid
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+      });
+      
+      // Run mermaid on all elements with .mermaid class
+      mermaid.run({
+        querySelector: '.mermaid',
+        nodes: previewRef.current.querySelectorAll('.mermaid'),
+      }).catch((error) => {
+        console.error('Mermaid rendering error:', error);
+      });
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [content, viewMode]);
 
   // Bidirectional sync scrolling between editor and preview
   const syncScroll = useCallback((source: 'editor' | 'preview') => {
@@ -239,6 +295,7 @@ export function RichTextEditor({
   // Apply style to selected text in preview (updates editor content)
   const applyStyleToSelection = useCallback((style: 'bold' | 'italic' | 'underline') => {
     if (!editor || !selection.text) return;
+    if (codeModeRef.current === 'mdx') return;
     
     const html = editor.getHTML();
     const selectedText = selection.text;
@@ -261,7 +318,7 @@ export function RichTextEditor({
   // Handle code view changes
   const handleCodeChange = useCallback((newCode: string) => {
     onChange(newCode);
-    if (editor) {
+    if (editor && codeModeRef.current === 'html') {
       editor.commands.setContent(newCode);
     }
   }, [onChange, editor]);
@@ -347,6 +404,44 @@ export function RichTextEditor({
       }
       heading.appendChild(wrapper);
     });
+
+    // Convert mermaid code blocks to mermaid containers
+    // The HTML from TipTap may have code blocks as: <p>```</p><p>flowchart...</p><p>```</p>
+    let htmlContent = tempDiv.innerHTML;
+    
+    // Pattern 1: Handle paragraph-based code blocks (from markdown paste)
+    // Look for: <p>```</p> followed by content followed by <p>```</p>
+    const paragraphCodePattern = /<p>```<\/p>([\s\S]*?)<p>```<\/p>/gi;
+    htmlContent = htmlContent.replace(paragraphCodePattern, (match, content) => {
+      // Extract text content from between paragraph tags
+      const code = content
+        .replace(/<p>/gi, '')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .trim();
+      
+      const isMermaid = 
+        code.startsWith('flowchart') ||
+        code.startsWith('graph ') ||
+        code.startsWith('sequenceDiagram') ||
+        code.startsWith('xychart') ||
+        code.startsWith('pie') ||
+        code.startsWith('gantt') ||
+        code.startsWith('classDiagram') ||
+        code.startsWith('erDiagram') ||
+        code.startsWith('journey') ||
+        code.startsWith('gitGraph') ||
+        code.startsWith('mindmap') ||
+        code.startsWith('timeline') ||
+        code.startsWith('quadrantChart');
+      
+      if (isMermaid) {
+        return `<div class="mermaid">${code}</div>`;
+      }
+      return `<pre><code>${code}</code></pre>`;
+    });
+    
+    tempDiv.innerHTML = htmlContent;
 
     // External links open in new tab
     tempDiv.querySelectorAll('a').forEach((a) => {
@@ -455,11 +550,17 @@ export function RichTextEditor({
     }
   }, [editor, handleImageUpload]);
 
-  // Handle paste
+  // Handle paste - detect markdown and images
   const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
     const items = Array.from(e.clipboardData.items);
     const imageItem = items.find(item => item.type.startsWith('image/'));
-    
+    const textData = e.clipboardData.getData('text/plain');
+
+    // Check for markdown patterns in pasted text
+    const markdownPattern = /^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\[.*?\]\(.*?\)|\*\*.*?\*|__.*?__|`[^`]+`|```/m;
+    const isMarkdown = markdownPattern.test(textData);
+
+    // If markdown is detected and no image, let TipTap handle it (it has markdown support)
     if (imageItem && editor) {
       e.preventDefault();
       const file = imageItem.getAsFile();
@@ -467,6 +568,8 @@ export function RichTextEditor({
         await handleImageUpload(file);
       }
     }
+    // If it's markdown, let the editor handle it - TipTap will convert markdown automatically
+    // No need to prevent default for markdown text
   }, [editor, handleImageUpload]);
 
   const setLink = useCallback(() => {
@@ -493,6 +596,16 @@ export function RichTextEditor({
   const setHighlight = useCallback((color: string) => {
     if (!editor) return;
     editor.chain().focus().toggleHighlight({ color }).run();
+  }, [editor]);
+
+  const insertMermaid = useCallback(() => {
+    if (!editor) return;
+    const mermaidCode = `flowchart TD
+    A[Start] --> B{Is it?}
+    B -->|Yes| C[OK]
+    B -->|No| D[End]`;
+    editor.chain().focus().insertContent(`\n\n\`\`\`mermaid\n${mermaidCode}\n\`\`\`\n\n`).run();
+    toast.success('Mermaid diagram inserted!');
   }, [editor]);
 
   if (!editor) {
@@ -534,23 +647,27 @@ export function RichTextEditor({
             </ToggleGroupItem>
           </ToggleGroup>
 
-          {/* Code View Toggle (only in edit mode) */}
+          {/* Content Format Toggle (only in edit mode) */}
           {viewMode === 'edit' && (
             <>
               <Separator orientation="vertical" className="h-6 mx-2" />
               <ToggleGroup 
                 type="single" 
-                value={showCodeView ? 'code' : 'visual'}
-                onValueChange={(v) => v && setShowCodeView(v === 'code')}
+                value={codeMode}
+                onValueChange={(v) => v && setCodeMode(v as CodeMode)}
                 className="bg-background border rounded-md p-0.5"
               >
                 <ToggleGroupItem value="visual" aria-label="Visual Editor" className="h-7 px-2 text-xs">
                   <Edit3 className="h-3.5 w-3.5 mr-1" />
                   Visual
                 </ToggleGroupItem>
-                <ToggleGroupItem value="code" aria-label="Code View" className="h-7 px-2 text-xs">
+                <ToggleGroupItem value="html" aria-label="HTML Code View" className="h-7 px-2 text-xs">
                   <Code className="h-3.5 w-3.5 mr-1" />
                   HTML
+                </ToggleGroupItem>
+                <ToggleGroupItem value="mdx" aria-label="MDX Code View" className="h-7 px-2 text-xs">
+                  <Code className="h-3.5 w-3.5 mr-1" />
+                  MDX
                 </ToggleGroupItem>
               </ToggleGroup>
             </>
@@ -733,6 +850,12 @@ export function RichTextEditor({
             icon={Minus}
             tooltip="Horizontal Rule"
           />
+          <ToolbarButton
+            onClick={insertMermaid}
+            isActive={false}
+            icon={Workflow}
+            tooltip="Insert Mermaid Diagram"
+          />
 
           <Separator orientation="vertical" className="h-6 mx-1" />
 
@@ -846,7 +969,7 @@ export function RichTextEditor({
               onDrop={handleDrop}
               onPaste={handlePaste}
             >
-              {showCodeView ? (
+              {codeMode !== 'visual' ? (
                 <textarea
                   ref={codeViewRef}
                   value={content}
@@ -885,8 +1008,8 @@ export function RichTextEditor({
               onScroll={handlePreviewScroll}
               onMouseUp={handlePreviewMouseUp}
             >
-              {/* Floating Toolbar for text selection */}
-              {selection.rect && selection.text && (
+              {/* Floating Toolbar for text selection (HTML/Visual mode only) */}
+              {codeMode !== 'mdx' && selection.rect && selection.text && (
                 <div 
                   className="fixed z-50 bg-popover border rounded-lg shadow-lg p-1 flex gap-1"
                   style={{ 
@@ -955,10 +1078,14 @@ export function RichTextEditor({
                 {/* Blog Content */}
                 <div className="p-6">
                   {content ? (
-                    <div 
-                      className="blog-content prose prose-sm md:prose-base max-w-none"
-                      dangerouslySetInnerHTML={{ __html: processedPreviewContent() }}
-                    />
+                    codeMode === 'mdx' ? (
+                      <HybridContent content={content} />
+                    ) : (
+                      <div 
+                        className="blog-content prose prose-sm md:prose-base max-w-none"
+                        dangerouslySetInnerHTML={{ __html: processedPreviewContent() }}
+                      />
+                    )
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
                       <Eye className="h-12 w-12 mx-auto mb-3 opacity-50" />

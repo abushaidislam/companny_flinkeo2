@@ -9,11 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DOMPurify from 'dompurify';
 import { ArticleCard } from '@/components/ui/blog-post-card';
-import renderMathInElement from 'katex/contrib/auto-render';
-import 'katex/dist/katex.min.css';
-import Chart from 'chart.js/auto';
-import type { ChartData, ChartType } from 'chart.js';
-import mermaid from 'mermaid';
+import { detectContentType, markdownToHtml } from '@/lib/hybrid-renderer';
+import { HybridContent } from '@/components/HybridContent';
 
 interface Blog {
   id: string;
@@ -45,8 +42,10 @@ export default function BlogDetail() {
   const [error, setError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [readingProgress, setReadingProgress] = useState(0);
-  const chartInstancesRef = useRef<Chart[]>([]);
   const isMountedRef = useRef(true);
+
+  const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
+  const tocObserverRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     return () => {
@@ -98,7 +97,20 @@ export default function BlogDetail() {
   const processedContent = useMemo(() => {
     const result: { html: string; headings: TocHeading[] } = { html: '', headings: [] };
     if (!blog?.content) return result;
-    const sanitized = DOMPurify.sanitize(blog.content);
+
+    // Detect content type
+    const contentType = detectContentType(blog.content);
+
+    // Convert markdown to HTML for processing if needed
+    let htmlContent: string;
+    if (contentType === 'markdown') {
+      // Simple markdown to HTML conversion for TOC extraction
+      htmlContent = markdownToHtml(blog.content);
+    } else {
+      htmlContent = blog.content;
+    }
+
+    const sanitized = DOMPurify.sanitize(htmlContent);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = sanitized;
 
@@ -181,8 +193,49 @@ export default function BlogDetail() {
 
   const tocHeadings = processedContent.headings;
 
-  // Handle hash navigation after content loads
+  // Scroll spy: track which heading is currently in view
   useEffect(() => {
+    if (tocHeadings.length === 0) return;
+
+    const contentEl = contentRef.current;
+    if (!contentEl) return;
+
+    // Cleanup previous observer
+    if (tocObserverRef.current) {
+      tocObserverRef.current.disconnect();
+    }
+
+    // Create new observer
+    tocObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveHeadingId(entry.target.id);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0,
+      }
+    );
+
+    // Observe all heading elements
+    tocHeadings.forEach((heading) => {
+      const el = document.getElementById(heading.id);
+      if (el && tocObserverRef.current) {
+        tocObserverRef.current.observe(el);
+      }
+    });
+
+    return () => {
+      tocObserverRef.current?.disconnect();
+    };
+  }, [tocHeadings, processedContent.html]);
+
+  // Handle hash navigation after content loads
+  const handleContentProcessed = () => {
     if (!isLoading && window.location.hash) {
       const hash = window.location.hash.slice(1);
       const element = document.getElementById(hash);
@@ -192,7 +245,7 @@ export default function BlogDetail() {
         }, 100);
       }
     }
-  }, [isLoading]);
+  };
 
   // Load related blogs with cleanup protection
   useEffect(() => {
@@ -247,221 +300,6 @@ export default function BlogDetail() {
       window.removeEventListener('resize', handleScroll);
     };
   }, []);
-
-  // Render math (KaTeX) + charts + reveal animations after HTML is injected
-  useEffect(() => {
-    const root = contentRef.current;
-    if (!root) return;
-
-    // Cleanup previous charts
-    chartInstancesRef.current.forEach((c) => c.destroy());
-    chartInstancesRef.current = [];
-
-    // 1) Math rendering
-    try {
-      renderMathInElement(root, {
-        delimiters: [
-          { left: '$$', right: '$$', display: true },
-          { left: '\\[', right: '\\]', display: true },
-          { left: '$', right: '$', display: false },
-          { left: '\\(', right: '\\)', display: false },
-        ],
-        throwOnError: false,
-      });
-    } catch (e) {
-      console.error('KaTeX render error:', e);
-    }
-
-    // 2) Charts: write a code block like:
-    // ```chart
-    // {"type":"line","data":{"labels":["A","B"],"datasets":[{"label":"Score","data":[1,2]}]}}
-    // ```
-    const chartBlocks = Array.from(root.querySelectorAll('pre > code'))
-      .filter((code) => {
-        const className = (code as HTMLElement).className || '';
-        return className.includes('language-chart') || className.includes('lang-chart') || className.includes('chart');
-      }) as HTMLElement[];
-
-    chartBlocks.forEach((codeEl, idx) => {
-      const raw = (codeEl.textContent || '').trim();
-      if (!raw) return;
-
-      let spec: { title?: string; type?: string; data?: unknown; options?: { legend?: boolean } & Record<string, unknown> };
-      try {
-        spec = JSON.parse(raw);
-      } catch {
-        // If JSON isn't valid, leave it as code (author can fix)
-        return;
-      }
-
-      const pre = codeEl.closest('pre');
-      if (!pre) return;
-
-      const container = document.createElement('div');
-      container.className = 'blog-chart blog-reveal';
-
-      const header = document.createElement('div');
-      header.className = 'blog-chart__header';
-      header.textContent = spec?.title || 'Chart';
-
-      const canvasWrap = document.createElement('div');
-      canvasWrap.className = 'blog-chart__canvas';
-
-      const canvas = document.createElement('canvas');
-      canvas.setAttribute('aria-label', spec?.title ? `Chart: ${spec.title}` : `Chart ${idx + 1}`);
-      canvasWrap.appendChild(canvas);
-
-      container.appendChild(header);
-      container.appendChild(canvasWrap);
-
-      pre.parentNode?.replaceChild(container, pre);
-
-      try {
-        const chart = new Chart(canvas, {
-          type: (spec.type as ChartType) || 'line',
-          data: spec.data as ChartData,
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 900, easing: 'easeOutQuart' },
-            plugins: {
-              legend: { display: (spec?.options?.legend as boolean) !== false },
-              title: { display: false },
-              tooltip: { enabled: true },
-            },
-            ...(spec.options as Record<string, unknown> || {}),
-          },
-        });
-        chartInstancesRef.current.push(chart);
-      } catch (e) {
-        console.error('Chart render error:', e);
-      }
-    });
-
-    // 3) Mermaid diagrams: write a code block like:
-    // ```mermaid
-    // graph TD
-    //   A[Start] --> B[End]
-    // ```
-    const mermaidBlocks = Array.from(root.querySelectorAll('pre > code'))
-      .filter((code) => {
-        const className = (code as HTMLElement).className || '';
-        return className.includes('language-mermaid') || className.includes('lang-mermaid') || className.includes('mermaid');
-      }) as HTMLElement[];
-
-    if (mermaidBlocks.length > 0) {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-        securityLevel: 'strict',
-      });
-
-      mermaidBlocks.forEach((codeEl) => {
-        const raw = (codeEl.textContent || '').trim();
-        if (!raw) return;
-
-        const pre = codeEl.closest('pre');
-        if (!pre) return;
-
-        const container = document.createElement('div');
-        container.className = 'blog-mermaid blog-reveal';
-
-        const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
-
-        try {
-          mermaid.render(id, raw).then(({ svg }) => {
-            if (!isMountedRef.current) return;
-            container.innerHTML = svg;
-            pre.parentNode?.replaceChild(container, pre);
-          }).catch((err) => {
-            if (!isMountedRef.current) return;
-            console.error('Mermaid render error:', err);
-            container.innerHTML = `<div class="text-red-500">Failed to render diagram</div>`;
-            pre.parentNode?.replaceChild(container, pre);
-          });
-        } catch (e) {
-          console.error('Mermaid error:', e);
-        }
-      });
-    }
-
-    // 4) Copy code buttons for all code blocks
-    root.querySelectorAll('pre:not(.blog-mermaid pre):not(.blog-chart pre)').forEach((pre) => {
-      const code = pre.querySelector('code');
-      if (!code) return;
-
-      // Skip if already has copy button
-      if (pre.querySelector('.copy-code-btn')) return;
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'relative group';
-
-      const btn = document.createElement('button');
-      btn.className = 'copy-code-btn';
-      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
-      btn.setAttribute('aria-label', 'Copy code');
-      btn.onclick = async () => {
-        const text = code.textContent || '';
-        try {
-          await navigator.clipboard.writeText(text);
-          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
-          btn.classList.add('copied');
-          setTimeout(() => {
-            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
-            btn.classList.remove('copied');
-          }, 2000);
-        } catch (err) {
-          console.error('Failed to copy:', err);
-        }
-      };
-
-      pre.parentNode?.insertBefore(wrapper, pre);
-      wrapper.appendChild(pre);
-      wrapper.appendChild(btn);
-    });
-
-    // 5) YouTube video embeds: convert youtube links to embeds
-    root.querySelectorAll('a[href*="youtube.com"], a[href*="youtu.be"]').forEach((link) => {
-      const href = (link as HTMLAnchorElement).getAttribute('href') || '';
-      const match = href.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if (!match) return;
-
-      const videoId = match[1];
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}`;
-      iframe.className = 'blog-youtube';
-      iframe.setAttribute('frameborder', '0');
-      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
-      iframe.setAttribute('allowfullscreen', '');
-      iframe.setAttribute('title', 'YouTube video');
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'blog-video-wrapper blog-reveal';
-      wrapper.appendChild(iframe);
-
-      link.parentNode?.replaceChild(wrapper, link);
-    });
-
-    // 6) Scroll reveal (IntersectionObserver)
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-
-    const targets = Array.from(root.querySelectorAll('.blog-reveal')) as HTMLElement[];
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            (entry.target as HTMLElement).classList.add('is-visible');
-            io.unobserve(entry.target);
-          }
-        });
-      },
-      { root: null, threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
-    );
-
-    targets.forEach((t) => io.observe(t));
-    return () => io.disconnect();
-  }, [processedContent.html]);
 
   if (isLoading) {
     return (
@@ -613,15 +451,17 @@ export default function BlogDetail() {
               </motion.div>
             )}
 
-            {/* Main Content */}
+            {/* Main Content - Hybrid: supports both HTML and Markdown */}
             <motion.div
               ref={contentRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="blog-content"
-              dangerouslySetInnerHTML={{ __html: processedContent.html }}
-            />
+            >
+              {blog.content && (
+                <HybridContent content={blog.content} />
+              )}
+            </motion.div>
 
             {/* Related articles */}
             {relatedBlogs.length > 0 && (
@@ -648,26 +488,45 @@ export default function BlogDetail() {
             )}
           </div>
 
-          {/* Table of contents */}
+          {/* Table of contents - Upgraded with scroll spy */}
           {tocHeadings.length > 0 && (
             <aside className="hidden lg:block w-72 shrink-0 sticky top-24 self-start pl-6 border-l border-border max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
               <div className="p-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <List className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-muted-foreground">On this page</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <List className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">On this page</h3>
                 </div>
-                <nav className="space-y-1">
-                  {tocHeadings.map((h) => (
-                    <a
-                      key={h.id}
-                      href={`#${h.id}`}
-                      className={`block text-sm hover:text-primary transition-colors ${
-                        h.level === 2 ? 'font-medium' : 'pl-3 text-muted-foreground'
-                      }`}
-                    >
-                      {h.text}
-                    </a>
-                  ))}
+                <nav className="space-y-0.5">
+                  {tocHeadings.map((h) => {
+                    const isActive = activeHeadingId === h.id;
+                    const baseClasses = "block text-sm py-1.5 px-2 rounded-md transition-all duration-200 hover:bg-muted";
+                    const levelClasses = {
+                      2: "font-medium text-foreground",
+                      3: "pl-3 text-muted-foreground",
+                      4: "pl-6 text-muted-foreground/80 text-xs",
+                    }[h.level] || "";
+                    const activeClasses = isActive
+                      ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
+                      : "";
+
+                    return (
+                      <a
+                        key={h.id}
+                        href={`#${h.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const el = document.getElementById(h.id);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            window.history.pushState(null, '', `#${h.id}`);
+                          }
+                        }}
+                        className={`${baseClasses} ${levelClasses} ${activeClasses}`}
+                      >
+                        {h.text}
+                      </a>
+                    );
+                  })}
                 </nav>
               </div>
             </aside>
