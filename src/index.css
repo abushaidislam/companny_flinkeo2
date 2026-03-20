@@ -1,0 +1,322 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Anek+Bangla:wght@100..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 7%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 0 0% 7%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 7%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 36%;
+
+    --accent: 0 0% 93%;
+    --accent-foreground: 0 0% 7%;
+
+    --destructive: 0 63% 54%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 7%;
+
+    --radius: 0.75rem;
+
+    --glass: 0 0% 100%;
+    --glass-border: 0 0% 90%;
+    --text-secondary: 0 0% 36%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 7%;
+    --sidebar-primary: 0 0% 7%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 93%;
+    --sidebar-accent-foreground: 0 0% 7%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 7%;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  section[id] {
+    scroll-margin-top: 88px;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card border border-border rounded-xl;
+    box-shadow: 0 12px 32px -18px hsl(0 0% 0% / 0.35), 0 2px 8px -4px hsl(0 0% 0% / 0.2);
+  }
+
+  .premium-shadow {
+    box-shadow: 0 16px 40px -22px hsl(0 0% 0% / 0.35), 0 6px 16px -10px hsl(0 0% 0% / 0.25);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground;
+  }
+
+  .gradient-border {
+    border-image: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))) 1;
+  }
+
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Enhanced Blog Article Heading Styles */
+  .blog-content h1 {
+    @apply text-4xl md:text-5xl font-bold font-display text-foreground mb-8 pb-4 border-b-2 border-primary/20;
+    scroll-margin-top: 100px;
+  }
+
+  .blog-content h2 {
+    @apply text-2xl md:text-3xl font-semibold font-display text-foreground mt-12 mb-6 pl-4 border-l-4 border-primary/60;
+    scroll-margin-top: 100px;
+  }
+
+  .blog-content h3 {
+    @apply text-xl md:text-2xl font-semibold font-display text-foreground/90 mt-8 mb-4;
+    scroll-margin-top: 100px;
+  }
+
+  .blog-content h4 {
+    @apply text-lg md:text-xl font-semibold font-display text-foreground/80 mt-6 mb-3;
+    scroll-margin-top: 100px;
+  }
+
+  /* Heading anchor links */
+  .blog-content .heading-anchor {
+    @apply relative;
+  }
+
+  .blog-content .heading-anchor .anchor-icon {
+    @apply absolute -left-6 top-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200 text-primary/60 hover:text-primary;
+  }
+
+  .blog-content .heading-anchor:hover .anchor-icon {
+    @apply opacity-100;
+  }
+
+  /* Better paragraph spacing */
+  .blog-content p {
+    @apply mb-6 leading-relaxed text-foreground/90;
+  }
+
+  /* Improved list styling - ultra tight spacing */
+  .blog-content ul {
+    @apply mb-3 list-disc pl-6;
+  }
+
+  .blog-content ol {
+    @apply mb-3 list-decimal pl-6;
+  }
+
+  .blog-content li {
+    @apply text-foreground/90 text-base leading-snug my-0.5;
+  }
+
+  /* Better code block styling */
+  .blog-content pre {
+    @apply mb-6 p-4 rounded-lg bg-muted/80 border border-border overflow-x-auto;
+  }
+
+  .blog-content code {
+    @apply font-mono text-sm bg-muted px-1.5 py-0.5 rounded;
+  }
+
+  .blog-content pre code {
+    @apply bg-transparent p-0;
+  }
+
+  /* Blockquote styling with accent */
+  .blog-content blockquote {
+    @apply mb-6 pl-6 border-l-4 border-primary italic text-muted-foreground;
+  }
+
+  /* Table styling */
+  .blog-content .blog-table {
+    @apply w-full mb-6 overflow-x-auto rounded-xl border border-border bg-card;
+  }
+
+  .blog-content table {
+    @apply w-full border-collapse;
+    min-width: 640px;
+  }
+
+  .blog-content th,
+  .blog-content td {
+    @apply px-4 py-3 border border-border text-left;
+  }
+
+  .blog-content th {
+    @apply bg-muted font-semibold;
+  }
+
+  .blog-content tbody tr:nth-child(even) td {
+    @apply bg-muted/30;
+  }
+
+  /* Charts */
+  .blog-content .blog-chart {
+    @apply mb-6 rounded-xl border border-border bg-card p-4;
+  }
+
+  .blog-content .blog-chart__header {
+    @apply mb-3 text-sm font-semibold text-muted-foreground;
+  }
+
+  .blog-content .blog-chart__canvas {
+    @apply w-full;
+    height: 320px;
+  }
+
+  /* Mermaid diagrams */
+  .blog-content .blog-mermaid {
+    @apply mb-6 rounded-xl border border-border bg-card p-4 flex justify-center;
+  }
+
+  .blog-content .blog-mermaid svg {
+    @apply max-w-full h-auto;
+  }
+
+  /* Copy code button */
+  .blog-content .copy-code-btn {
+    @apply absolute top-2 right-2 p-2 rounded-md bg-muted/80 text-muted-foreground;
+    @apply hover:bg-muted hover:text-foreground transition-colors opacity-0 group-hover:opacity-100;
+  }
+
+  .blog-content .copy-code-btn.copied {
+    @apply text-green-500 bg-green-500/10 opacity-100;
+  }
+
+  /* YouTube video embeds */
+  .blog-content .blog-video-wrapper {
+    @apply mb-6 rounded-xl overflow-hidden;
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 ratio */
+    height: 0;
+  }
+
+  .blog-content .blog-video-wrapper iframe {
+    @apply absolute top-0 left-0 w-full h-full rounded-xl;
+  }
+
+  /* KaTeX polish */
+  .blog-content .katex-display {
+    @apply my-6 overflow-x-auto overflow-y-hidden;
+  }
+
+  /* Scroll reveal animation */
+  .blog-content .blog-reveal {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: opacity, transform;
+  }
+
+  .blog-content .blog-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blog-content .blog-reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /* Horizontal rule */
+  .blog-content hr {
+    @apply my-8 border-t border-border;
+  }
+
+  /* Premium Bangla Font Support */
+  .font-bangla {
+    font-family: 'Anek Bangla', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Apply Bangla font to blog content with Bengali unicode range */
+  .blog-content:lang(bn),
+  .blog-content [lang="bn"] {
+    font-family: 'Anek Bangla', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Auto-detect Bengali script and apply font */
+  .blog-content {
+    font-family: 'Anek Bangla', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    font-size: 1.05rem;
+  }
+
+  /* Better inline media */
+  .blog-content img {
+    @apply max-w-full h-auto rounded-lg;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .blog-content a {
+    @apply text-primary hover:underline;
+  }
+}
