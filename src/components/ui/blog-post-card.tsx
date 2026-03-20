@@ -16,6 +16,7 @@ export interface ArticleCardProps {
   excerpt: string;
   cover?: string;
   tag?: string;
+  tags?: string[];
   readingTime?: number; // in minutes
   writer?: string;
   publishedAt?: Date;
@@ -25,6 +26,7 @@ export interface ArticleCardProps {
 export const ArticleCard: React.FC<ArticleCardProps> = ({
   cover,
   tag,
+  tags,
   readingTime,
   headline,
   excerpt,
@@ -32,7 +34,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   publishedAt,
   clampLines,
 }) => {
-  const hasMeta = tag || readingTime;
+  const hasMeta = tag || tags?.length || readingTime;
   const hasFooter = writer || publishedAt;
 
   return (
@@ -51,14 +53,18 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
 
       <CardContent className="flex-grow p-3">
         {hasMeta && (
-          <div className="mb-4 flex items-center text-sm text-muted-foreground">
-            {tag && (
-            <Badge className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:text-black hover:bg-muted/80">
-              {tag}
-            </Badge>
-
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            {tags?.map((t) => (
+              <Badge key={t} variant="outline" className="text-xs">
+                #{t}
+              </Badge>
+            ))}
+            {tag && !tags?.includes(tag) && (
+              <Badge className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:text-black hover:bg-muted/80">
+                {tag}
+              </Badge>
             )}
-            {tag && readingTime && <span className="mx-2">•</span>}
+            {(tag || tags?.length) && readingTime && <span className="mx-1">•</span>}
             {readingTime && <span>{formatReadTime(readingTime)}</span>}
           </div>
         )}

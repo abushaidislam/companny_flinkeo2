@@ -13,6 +13,7 @@ interface Blog {
   excerpt: string;
   cover_image: string;
   tag: string;
+  tags?: string[];
   reading_time: number;
   writer: string;
   published_at: string;
@@ -51,6 +52,7 @@ const BlogSection = () => {
       excerpt: 'From automated coding assistants to intelligent design workflows, AI is redefining how developers build and ship modern applications.',
       cover_image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80',
       tag: 'Innovation',
+      tags: ['AI', 'Web Development', 'Future'],
       reading_time: 7,
       writer: 'John Doe',
       slug: 'shaping-tomorrow-ai-web',
@@ -61,6 +63,7 @@ const BlogSection = () => {
       excerpt: 'How personalized shopping experiences and seamless checkout flows are driving conversion rates through the roof.',
       cover_image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80',
       tag: 'E-commerce',
+      tags: ['UX', 'E-commerce', 'Conversion'],
       reading_time: 6,
       writer: 'Sarah Chen',
       slug: 'future-ecommerce-ux',
@@ -71,6 +74,7 @@ const BlogSection = () => {
       excerpt: 'Essential strategies for ranking higher in search results and driving organic traffic to your website.',
       cover_image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80',
       tag: 'SEO',
+      tags: ['SEO', 'Marketing', 'Traffic'],
       reading_time: 8,
       writer: 'Mike Johnson',
       slug: 'mastering-seo-2025',
@@ -120,6 +124,7 @@ const BlogSection = () => {
                     excerpt={post.excerpt}
                     cover={post.cover_image}
                     tag={post.tag}
+                    tags={post.tags}
                     readingTime={post.reading_time}
                     writer={post.writer}
                     publishedAt={new Date(post.published_at)}

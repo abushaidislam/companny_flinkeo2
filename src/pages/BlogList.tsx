@@ -14,6 +14,7 @@ interface Blog {
   excerpt: string;
   cover_image: string;
   tag: string;
+  tags: string[];
   reading_time: number;
   writer: string;
   writer_avatar: string;
@@ -97,6 +98,7 @@ export default function BlogList() {
                       excerpt={blog.excerpt}
                       cover={blog.cover_image}
                       tag={blog.tag}
+                      tags={blog.tags}
                       readingTime={blog.reading_time}
                       writer={blog.writer}
                       publishedAt={new Date(blog.published_at)}

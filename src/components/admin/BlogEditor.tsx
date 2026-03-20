@@ -1,14 +1,68 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
-import { ArrowLeft, Save, Eye, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
-import DOMPurify from 'dompurify';
+
+function TagInput({
+  tags,
+  onChange,
+}: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+}) {
+  const [input, setInput] = useState('');
+
+  const addTag = () => {
+    const trimmed = input.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      onChange([...tags, trimmed]);
+      setInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    onChange(tags.filter((t) => t !== tagToRemove));
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>Tags</Label>
+      <div className="flex flex-wrap gap-2 mb-2">
+        {tags.map((tag) => (
+          <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(tag)}
+              className="ml-1 hover:text-destructive transition-colors"
+              aria-label={`Remove ${tag}`}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Add tag..."
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+        />
+        <Button onClick={addTag} type="button" variant="outline">
+          Add
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function AdminBlogEditor() {
   const navigate = useNavigate();
@@ -22,6 +76,7 @@ export function AdminBlogEditor() {
     content: '',
     cover_image: '',
     tag: '',
+    tags: [] as string[],
     writer: '',
     writer_avatar: '',
     reading_time: 5,
@@ -60,6 +115,7 @@ export function AdminBlogEditor() {
           content: data.content,
           cover_image: data.cover_image || '',
           tag: data.tag || '',
+          tags: data.tags || [],
           writer: data.writer,
           writer_avatar: data.writer_avatar || '',
           reading_time: data.reading_time || 5,
@@ -131,73 +187,6 @@ export function AdminBlogEditor() {
     const minutes = estimateReadingTimeMinutes(formData.content);
     setFormData(prev => ({ ...prev, reading_time: minutes }));
   }, [formData.content, isReadingTimeAuto]);
-
-  const processedPreviewContent = useMemo(() => {
-    if (!formData.content) return '';
-    if (typeof window === 'undefined') return '';
-
-    const sanitized = DOMPurify.sanitize(formData.content);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = sanitized;
-
-    const usedIds = new Set<string>();
-    const headings = tempDiv.querySelectorAll('h1, h2, h3, h4');
-
-    headings.forEach((heading) => {
-      const text = heading.textContent || '';
-      let id = text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .substring(0, 50);
-
-      if (!id) id = 'section';
-      let dedup = id;
-      let i = 2;
-      while (usedIds.has(dedup)) {
-        dedup = `${id}-${i++}`;
-      }
-      id = dedup;
-      usedIds.add(id);
-
-      heading.id = id;
-
-      const wrapper = document.createElement('span');
-      wrapper.className = 'heading-anchor';
-
-      while (heading.firstChild) {
-        wrapper.appendChild(heading.firstChild);
-      }
-
-      const anchor = document.createElement('a');
-      anchor.href = `#${id}`;
-      anchor.className = 'anchor-icon';
-      anchor.setAttribute('aria-label', `Link to ${text}`);
-      anchor.innerHTML =
-        `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
-
-      wrapper.appendChild(anchor);
-      heading.appendChild(wrapper);
-    });
-
-    // Enhance UX: make sure inline links/images render nicely in the preview
-    tempDiv.querySelectorAll('a').forEach((a) => {
-      const href = (a as HTMLAnchorElement).getAttribute('href') || '';
-      const isHttp = href.startsWith('http://') || href.startsWith('https://');
-      if (isHttp) {
-        (a as HTMLAnchorElement).setAttribute('target', '_blank');
-        (a as HTMLAnchorElement).setAttribute('rel', 'noopener noreferrer');
-      }
-    });
-
-    tempDiv.querySelectorAll('img').forEach((img) => {
-      const el = img as HTMLImageElement;
-      el.loading = 'lazy';
-      el.decoding = 'async';
-    });
-
-    return tempDiv.innerHTML;
-  }, [formData.content]);
 
   const generateSlug = (headline: string) => {
     return headline
@@ -380,6 +369,12 @@ export function AdminBlogEditor() {
             </div>
           </div>
 
+          {/* Tags Input */}
+          <TagInput
+            tags={formData.tags}
+            onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+          />
+
           {/* Images */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -402,31 +397,18 @@ export function AdminBlogEditor() {
             </div>
           </div>
 
-          {/* Content Editor */}
+          {/* Content Editor with Integrated Preview */}
           <div className="space-y-2">
             <Label>Content *</Label>
             <RichTextEditor
               content={formData.content}
               onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+              headline={formData.headline}
+              coverImage={formData.cover_image}
+              writer={formData.writer}
+              tag={formData.tag}
+              readingTime={formData.reading_time}
             />
-          </div>
-
-          {/* Live Preview */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <Label>Live Preview</Label>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Sparkles className="h-3.5 w-3.5" />
-                Rendered like the public blog view
-              </div>
-            </div>
-            <div className="blog-content border rounded-lg bg-card p-5 max-h-[60vh] overflow-auto">
-              {processedPreviewContent ? (
-                <div dangerouslySetInnerHTML={{ __html: processedPreviewContent }} />
-              ) : (
-                <p className="text-sm text-muted-foreground">Start writing to see your blog preview here.</p>
-              )}
-            </div>
           </div>
         </div>
       </div>

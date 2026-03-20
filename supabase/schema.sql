@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS blogs (
   content TEXT NOT NULL,
   cover_image TEXT,
   tag TEXT,
+  tags TEXT[] DEFAULT '{}',
   reading_time INTEGER DEFAULT 5,
   writer TEXT NOT NULL,
   writer_avatar TEXT,

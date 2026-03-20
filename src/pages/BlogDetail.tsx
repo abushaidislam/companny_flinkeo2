@@ -23,6 +23,7 @@ interface Blog {
   content: string;
   cover_image: string;
   tag: string;
+  tags: string[];
   reading_time: number;
   writer: string;
   writer_avatar: string;
@@ -544,10 +545,20 @@ export default function BlogDetail() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
-              {blog.tag && (
-                <Badge variant="secondary" className="mb-4">
-                  {blog.tag}
-                </Badge>
+              {/* Tags */}
+              {(blog.tags?.length > 0 || blog.tag) && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {blog.tags?.map((tag) => (
+                    <Badge key={tag} variant="outline">
+                      #{tag}
+                    </Badge>
+                  ))}
+                  {blog.tag && !blog.tags?.includes(blog.tag) && (
+                    <Badge variant="secondary">
+                      {blog.tag}
+                    </Badge>
+                  )}
+                </div>
               )}
               <h1 className="font-display font-bold text-3xl md:text-4xl lg:text-5xl mb-6">
                 {blog.headline}
@@ -624,6 +635,7 @@ export default function BlogDetail() {
                         excerpt={r.excerpt}
                         cover={r.cover_image}
                         tag={r.tag}
+                        tags={r.tags}
                         readingTime={r.reading_time}
                         writer={r.writer}
                         publishedAt={new Date(r.published_at)}

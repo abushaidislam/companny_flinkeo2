@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -7,7 +7,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Strike from '@tiptap/extension-strike';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
@@ -39,19 +39,35 @@ import {
   Superscript as SuperscriptIcon,
   Maximize2,
   Minimize2,
-  FileImage
+  FileImage,
+  Eye,
+  Edit3,
+  Columns,
+  Monitor,
+  Tablet,
+  Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
+  headline?: string;
+  coverImage?: string;
+  writer?: string;
+  tag?: string;
+  readingTime?: number;
 }
+
+type ViewMode = 'edit' | 'split' | 'preview';
+type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 const colors = [
   '#000000', '#1a1a1a', '#333333', '#666666', '#999999', '#cccccc', '#ffffff',
@@ -99,10 +115,23 @@ function ToolbarButton({
   );
 }
 
-export function RichTextEditor({ content, onChange, placeholder = 'Write your blog content here...' }: RichTextEditorProps) {
+export function RichTextEditor({ 
+  content, 
+  onChange, 
+  placeholder = 'Write your blog content here...',
+  headline = '',
+  coverImage = '',
+  writer = '',
+  tag = '',
+  readingTime = 5
+}: RichTextEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -153,6 +182,79 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your bl
       setWordCount(editor.storage.characterCount.words());
     }
   }, [editor]);
+
+  // Sync scrolling between editor and preview
+  const handleEditorScroll = useCallback(() => {
+    if (viewMode !== 'split' || !editorRef.current || !previewRef.current) return;
+    
+    const editorEl = editorRef.current.querySelector('.ProseMirror');
+    const previewEl = previewRef.current;
+    
+    if (!editorEl || !previewEl) return;
+    
+    const scrollRatio = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
+    previewEl.scrollTop = scrollRatio * (previewEl.scrollHeight - previewEl.clientHeight);
+  }, [viewMode]);
+
+  const processedPreviewContent = useCallback(() => {
+    if (!content) return '';
+    if (typeof window === 'undefined') return '';
+
+    const sanitized = DOMPurify.sanitize(content);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = sanitized;
+
+    // Add IDs to headings for anchor links
+    const usedIds = new Set<string>();
+    const headings = tempDiv.querySelectorAll('h1, h2, h3, h4');
+
+    headings.forEach((heading) => {
+      const text = heading.textContent || '';
+      let id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 50);
+
+      if (!id) id = 'section';
+      let dedup = id;
+      let i = 2;
+      while (usedIds.has(dedup)) {
+        dedup = `${id}-${i++}`;
+      }
+      id = dedup;
+      usedIds.add(id);
+      heading.id = id;
+
+      // Add anchor wrapper
+      const wrapper = document.createElement('span');
+      wrapper.className = 'heading-anchor';
+
+      while (heading.firstChild) {
+        wrapper.appendChild(heading.firstChild);
+      }
+      heading.appendChild(wrapper);
+    });
+
+    // External links open in new tab
+    tempDiv.querySelectorAll('a').forEach((a) => {
+      const href = (a as HTMLAnchorElement).getAttribute('href') || '';
+      const isHttp = href.startsWith('http://') || href.startsWith('https://');
+      if (isHttp) {
+        (a as HTMLAnchorElement).setAttribute('target', '_blank');
+        (a as HTMLAnchorElement).setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+
+    // Lazy load images
+    tempDiv.querySelectorAll('img').forEach((img) => {
+      const el = img as HTMLImageElement;
+      el.loading = 'lazy';
+      el.decoding = 'async';
+    });
+
+    return tempDiv.innerHTML;
+  }, [content]);
 
   const addImage = useCallback(async () => {
     const url = window.prompt('Enter image URL:');
@@ -219,11 +321,66 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your bl
     ? 'fixed inset-0 z-50 bg-background'
     : 'border rounded-lg overflow-hidden bg-background';
 
+  const showEditor = viewMode === 'edit' || viewMode === 'split';
+  const showPreview = viewMode === 'preview' || viewMode === 'split';
+
+  const deviceWidthClass = {
+    desktop: 'w-full',
+    tablet: 'max-w-[768px] mx-auto',
+    mobile: 'max-w-[375px] mx-auto'
+  }[deviceMode];
+
   return (
     <div className={containerClasses}>
       <TooltipProvider>
-        {/* Toolbar */}
+        {/* Main Toolbar */}
         <div className="border-b p-2 flex flex-wrap gap-1 bg-muted/50 items-center">
+          {/* View Mode Toggle */}
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(v) => v && setViewMode(v as ViewMode)}
+            className="bg-background border rounded-md p-0.5"
+          >
+            <ToggleGroupItem value="edit" aria-label="Edit only" className="h-7 px-2 text-xs">
+              <Edit3 className="h-3.5 w-3.5 mr-1" />
+              Edit
+            </ToggleGroupItem>
+            <ToggleGroupItem value="split" aria-label="Split view" className="h-7 px-2 text-xs">
+              <Columns className="h-3.5 w-3.5 mr-1" />
+              Split
+            </ToggleGroupItem>
+            <ToggleGroupItem value="preview" aria-label="Preview only" className="h-7 px-2 text-xs">
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              Preview
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          <Separator orientation="vertical" className="h-6 mx-2" />
+
+          {/* Device Preview Toggle (only in preview modes) */}
+          {(viewMode === 'preview' || viewMode === 'split') && (
+            <>
+              <ToggleGroup 
+                type="single" 
+                value={deviceMode} 
+                onValueChange={(v) => v && setDeviceMode(v as DeviceMode)}
+                className="bg-background border rounded-md p-0.5"
+              >
+                <ToggleGroupItem value="desktop" aria-label="Desktop" className="h-7 w-7 p-0">
+                  <Monitor className="h-3.5 w-3.5" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="tablet" aria-label="Tablet" className="h-7 w-7 p-0">
+                  <Tablet className="h-3.5 w-3.5" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="mobile" aria-label="Mobile" className="h-7 w-7 p-0">
+                  <Smartphone className="h-3.5 w-3.5" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <Separator orientation="vertical" className="h-6 mx-2" />
+            </>
+          )}
+
           {/* Text Style */}
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -473,12 +630,77 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your bl
           </Button>
         </div>
 
-        {/* Editor */}
-        <div className={`relative ${isFullscreen ? 'h-[calc(100vh-120px)]' : ''}`}>
-          <EditorContent 
-            editor={editor} 
-            className={`prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none ${isFullscreen ? '[&_.ProseMirror]:min-h-full' : ''}`}
-          />
+        {/* Content Area */}
+        <div className={`flex ${viewMode === 'split' ? 'flex-row' : 'flex-col'} ${isFullscreen ? 'h-[calc(100vh-120px)]' : ''}`}>
+          {/* Editor */}
+          {showEditor && (
+            <div 
+              ref={editorRef}
+              className={`${viewMode === 'split' ? 'w-1/2 border-r' : 'w-full'} ${viewMode === 'edit' && !isFullscreen ? 'min-h-[400px]' : 'h-full'}`}
+              onScroll={handleEditorScroll}
+            >
+              <EditorContent 
+                editor={editor} 
+                className="prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-auto"
+              />
+            </div>
+          )}
+
+          {/* Preview */}
+          {showPreview && (
+            <div 
+              ref={previewRef}
+              className={`${viewMode === 'split' ? 'w-1/2' : 'w-full'} bg-muted/30 overflow-auto`}
+            >
+              <div className={`${deviceWidthClass} bg-background min-h-full`}>
+                {/* Blog Header */}
+                {(headline || coverImage) && (
+                  <div className="border-b">
+                    {coverImage && (
+                      <div className="w-full h-48 md:h-64 overflow-hidden">
+                        <img 
+                          src={coverImage} 
+                          alt={headline}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-6">
+                      {tag && (
+                        <span className="inline-block px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full mb-3">
+                          {tag}
+                        </span>
+                      )}
+                      {headline && (
+                        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                          {headline}
+                        </h1>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        {writer && <span>By {writer}</span>}
+                        {readingTime > 0 && <span>{readingTime} min read</span>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Blog Content */}
+                <div className="p-6">
+                  {content ? (
+                    <div 
+                      className="blog-content prose prose-sm md:prose-base max-w-none"
+                      dangerouslySetInnerHTML={{ __html: processedPreviewContent() }}
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Eye className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Start writing to see your blog preview here.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer with stats */}
@@ -486,10 +708,11 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your bl
           <div className="flex gap-4">
             <span>{wordCount} words</span>
             <span>{charCount} characters</span>
+            {readingTime > 0 && <span>{readingTime} min read</span>}
           </div>
           <div className="flex gap-2">
             <span className="hidden sm:inline">
-              Use <kbd className="px-1 py-0.5 bg-muted rounded border">Tab</kbd> for toolbar
+              View: <kbd className="px-1 py-0.5 bg-muted rounded border">{viewMode}</kbd>
             </span>
           </div>
         </div>
