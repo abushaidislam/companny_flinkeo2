@@ -135,9 +135,12 @@ export function RichTextEditor({
   const [charCount, setCharCount] = useState(0);
   const [splitPaneWidth, setSplitPaneWidth] = useState(50); // percentage
   const [isDragging, setIsDragging] = useState(false);
+  const [showCodeView, setShowCodeView] = useState(false);
+  const [selection, setSelection] = useState<{ text: string; rect: DOMRect | null }>({ text: '', rect: null });
   const editorRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const codeViewRef = useRef<HTMLTextAreaElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -212,6 +215,55 @@ export function RichTextEditor({
 
   const handleEditorScroll = useCallback(() => syncScroll('editor'), [syncScroll]);
   const handlePreviewScroll = useCallback(() => syncScroll('preview'), [syncScroll]);
+
+  // Text selection handler for preview
+  const handlePreviewMouseUp = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) {
+      setSelection({ text: '', rect: null });
+      return;
+    }
+    
+    const text = sel.toString().trim();
+    if (!text) {
+      setSelection({ text: '', rect: null });
+      return;
+    }
+    
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    setSelection({ text, rect });
+  }, []);
+
+  // Apply style to selected text in preview (updates editor content)
+  const applyStyleToSelection = useCallback((style: 'bold' | 'italic' | 'underline') => {
+    if (!editor || !selection.text) return;
+    
+    const html = editor.getHTML();
+    const selectedText = selection.text;
+    
+    // Find and wrap the selected text with appropriate tag
+    let styledHtml = html;
+    const tagMap = { bold: 'strong', italic: 'em', underline: 'u' };
+    const tag = tagMap[style];
+    
+    // Simple replacement (this is a basic implementation)
+    const regex = new RegExp(`(${selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+    styledHtml = html.replace(regex, `<${tag}>$1</${tag}>`);
+    
+    editor.commands.setContent(styledHtml);
+    onChange(styledHtml);
+    setSelection({ text: '', rect: null });
+    window.getSelection()?.removeAllRanges();
+  }, [editor, selection.text, onChange]);
+
+  // Handle code view changes
+  const handleCodeChange = useCallback((newCode: string) => {
+    onChange(newCode);
+    if (editor) {
+      editor.commands.setContent(newCode);
+    }
+  }, [onChange, editor]);
 
   // Resize handlers for split pane
   const handleResizeStart = useCallback(() => {
@@ -409,11 +461,29 @@ export function RichTextEditor({
               <Columns className="h-3.5 w-3.5 mr-1" />
               Split
             </ToggleGroupItem>
-            <ToggleGroupItem value="preview" aria-label="Preview only" className="h-7 px-2 text-xs">
-              <Eye className="h-3.5 w-3.5 mr-1" />
-              Preview
-            </ToggleGroupItem>
           </ToggleGroup>
+
+          {/* Code View Toggle (only in edit mode) */}
+          {viewMode === 'edit' && (
+            <>
+              <Separator orientation="vertical" className="h-6 mx-2" />
+              <ToggleGroup 
+                type="single" 
+                value={showCodeView ? 'code' : 'visual'}
+                onValueChange={(v) => v && setShowCodeView(v === 'code')}
+                className="bg-background border rounded-md p-0.5"
+              >
+                <ToggleGroupItem value="visual" aria-label="Visual Editor" className="h-7 px-2 text-xs">
+                  <Edit3 className="h-3.5 w-3.5 mr-1" />
+                  Visual
+                </ToggleGroupItem>
+                <ToggleGroupItem value="code" aria-label="Code View" className="h-7 px-2 text-xs">
+                  <Code className="h-3.5 w-3.5 mr-1" />
+                  HTML
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </>
+          )}
 
           <Separator orientation="vertical" className="h-6 mx-2" />
 
@@ -702,10 +772,20 @@ export function RichTextEditor({
               style={{ width: viewMode === 'split' ? `${splitPaneWidth}%` : '100%' }}
               onScroll={handleEditorScroll}
             >
-              <EditorContent 
-                editor={editor} 
-                className="prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-auto"
-              />
+              {showCodeView ? (
+                <textarea
+                  ref={codeViewRef}
+                  value={content}
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  className="w-full h-full min-h-[400px] p-4 font-mono text-sm bg-background resize-none focus:outline-none"
+                  spellCheck={false}
+                />
+              ) : (
+                <EditorContent 
+                  editor={editor} 
+                  className="prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-auto"
+                />
+              )}
             </div>
           )}
 
@@ -726,10 +806,46 @@ export function RichTextEditor({
           {showPreview && (
             <div 
               ref={previewRef}
-              className="bg-muted/30 overflow-auto"
+              className="bg-muted/30 overflow-auto relative"
               style={{ width: viewMode === 'split' ? `${100 - splitPaneWidth}%` : '100%' }}
               onScroll={handlePreviewScroll}
+              onMouseUp={handlePreviewMouseUp}
             >
+              {/* Floating Toolbar for text selection */}
+              {selection.rect && selection.text && (
+                <div 
+                  className="fixed z-50 bg-popover border rounded-lg shadow-lg p-1 flex gap-1"
+                  style={{ 
+                    top: (selection.rect.top - 45),
+                    left: (selection.rect.left + selection.rect.width / 2 - 60)
+                  }}
+                >
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => applyStyleToSelection('bold')}
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => applyStyleToSelection('italic')}
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => applyStyleToSelection('underline')}
+                  >
+                    <UnderlineIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <div className={`${deviceWidthClass} bg-background min-h-full`}>
                 {/* Blog Header */}
                 {(headline || coverImage) && (
