@@ -328,12 +328,13 @@
     margin: 0 0.1em;
   }
 
-  .blog-content .reference-link a {
+  .blog-content .reference-link [role='link'] {
     @apply text-primary hover:text-primary/80 font-medium no-underline;
     padding: 0 0.15em;
+    cursor: pointer;
   }
 
-  .blog-content .reference-link a:hover {
+  .blog-content .reference-link [role='link']:hover {
     @apply underline;
   }
 

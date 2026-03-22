@@ -17,16 +17,6 @@ export function References({ references }: ReferencesProps) {
     }
   };
 
-  const handleCiteClick = (e: React.MouseEvent<HTMLAnchorElement>, refId: string) => {
-    e.preventDefault();
-    const element = document.getElementById(refId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.classList.add('reference-highlight');
-      setTimeout(() => element.classList.remove('reference-highlight'), 2000);
-    }
-  };
-
   return (
     <div className="references-section mt-12 pt-8 border-t border-border">
       <h3 className="references-title text-lg font-semibold mb-4 text-foreground">

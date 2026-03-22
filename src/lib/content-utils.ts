@@ -17,7 +17,7 @@ export function detectContentType(content: string): 'html' | 'markdown' {
   const htmlPattern = /<(p|div|h[1-6]|ul|ol|li|blockquote|pre|code|strong|em|a|img|br|hr)[^>]*>|<\/(p|div|h[1-6]|ul|ol|li|blockquote|pre|code|strong|em|a)[^>]*>/i;
 
   // Check for markdown patterns
-  const markdownPattern = /(^|\n)#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\[.*?\]\(.*?\)|\*\*.*?\*|__.*?__|`[^`]+`|```|\|.*\|.*\|/m;
+  const markdownPattern = /(^|\n)#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\[.*?\]\(.*?\)|\[\^[^\]]+\]|^\[\^[^\]]+\]:\s|(?:\*\*.*?\*\*)|(?:__.*?__)|`[^`]+`|```|\|.*\|.*\|/m;
 
   // If it has markdown patterns, it's likely markdown (MDX often mixes markdown with tags)
   if (markdownPattern.test(trimmed)) {

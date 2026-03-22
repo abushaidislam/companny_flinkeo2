@@ -1,0 +1,38 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Flinke Flinke" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Flinke" [ref=e8]
+          - generic [ref=e9]: Flinke
+        - navigation "Main" [ref=e11]:
+          - list [ref=e13]:
+            - listitem [ref=e14]:
+              - button "Services" [ref=e15] [cursor=pointer]:
+                - text: Services
+                - img [ref=e16]
+            - listitem [ref=e18]:
+              - button "Company" [ref=e19] [cursor=pointer]:
+                - text: Company
+                - img [ref=e20]
+            - listitem [ref=e22]:
+              - link "Pricing" [ref=e23] [cursor=pointer]:
+                - /url: /#pricing
+            - listitem [ref=e24]:
+              - link "Portfolio" [ref=e25] [cursor=pointer]:
+                - /url: /#portfolio
+            - listitem [ref=e26]:
+              - link "Contact" [ref=e27] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e28]:
+          - button "Switch to dark mode" [ref=e29] [cursor=pointer]:
+            - img
+          - link "Our Work" [ref=e30] [cursor=pointer]:
+            - /url: /#portfolio
+          - link "Contact Us" [ref=e31] [cursor=pointer]:
+            - /url: /contact
+    - img [ref=e33]

@@ -17,7 +17,7 @@ export interface ParsedContent {
 /**
  * Parse content for MDX-style references
  * Format: [^id] inline, [^id]: content for definition
- * Returns processed HTML with clickable links and extracted references
+ * Returns processed markdown with clickable links and extracted references
  */
 export function parseReferences(content: string): ParsedContent {
   const references: Reference[] = [];
@@ -26,7 +26,7 @@ export function parseReferences(content: string): ParsedContent {
   // Find reference definitions: [^id]: content
   const refDefRegex = /^\[\^([^\]]+)\]:\s*(.+)$/gm;
   const definitions = new Map<string, string>();
-  let defMatch;
+  let defMatch: RegExpExecArray | null;
 
   while ((defMatch = refDefRegex.exec(content)) !== null) {
     const id = defMatch[1];
@@ -36,7 +36,7 @@ export function parseReferences(content: string): ParsedContent {
 
   // Remove definition lines from content
   let processedContent = content.replace(/^\[\^([^\]]+)\]:\s*(.+)$/gm, '');
-  processedContent = processedContent.replace(/\n{3,}/g, '\n\n'); // Clean up extra newlines
+  processedContent = processedContent.replace(/\n{3,}/g, '\n\n');
 
   // Find inline references: [^id]
   const inlineRefRegex = /\[\^([^\]]+)\]/g;
@@ -47,16 +47,17 @@ export function parseReferences(content: string): ParsedContent {
     const id = match[1];
     if (!uniqueIds.has(id)) {
       uniqueIds.add(id);
-      const content = definitions.get(id) || 'Reference not defined';
-      references.push({ id, index: index++, content });
+      const refContent = definitions.get(id) || 'Reference not defined';
+      references.push({ id, index: index++, content: refContent });
     }
   });
 
-  // Replace inline references with clickable superscript numbers
-  processedContent = processedContent.replace(inlineRefRegex, (match, id) => {
-    const ref = references.find((r) => r.id === id);
+  // Replace inline references with markdown links.
+  // The markdown renderer upgrades these anchors into superscript citations.
+  processedContent = processedContent.replace(inlineRefRegex, (_match, id) => {
+    const ref = references.find((item) => item.id === id);
     const refIndex = ref?.index || 0;
-    return `<sup class="reference-link" data-ref-id="${id}"><a href="#ref-${id}" id="cite-${id}">[${refIndex}]</a></sup>`;
+    return `[${refIndex}](#ref-${id})`;
   });
 
   return { content: processedContent, references };
