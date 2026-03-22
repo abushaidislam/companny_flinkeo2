@@ -105,7 +105,7 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
         if (!containerToReplace) return;
 
         const container = document.createElement('div');
-        container.className = 'blog-chart blog-reveal';
+        container.className = 'blog-chart blog-reveal is-visible';
 
         const header = document.createElement('div');
         header.className = 'blog-chart__header';
@@ -205,7 +205,7 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
           if (!containerToReplace) return;
 
           const container = document.createElement('div');
-          container.className = 'blog-mermaid blog-reveal';
+          container.className = 'blog-mermaid blog-reveal is-visible';
 
           const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
 

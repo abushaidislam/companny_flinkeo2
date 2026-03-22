@@ -102,6 +102,8 @@ describe('HybridContent special blocks', () => {
 
     expect(container.querySelector('.blog-chart canvas')).not.toBeNull();
     expect(container.querySelector('.blog-mermaid svg')).not.toBeNull();
+    expect(container.querySelector('.blog-chart')).toHaveClass('is-visible');
+    expect(container.querySelector('.blog-mermaid')).toHaveClass('is-visible');
   });
 
   it('renders markdown references as citations instead of raw html text', async () => {

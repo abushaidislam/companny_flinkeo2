@@ -115,7 +115,7 @@ function ChartBlock({ raw }: { raw: string }) {
   }
 
   return (
-    <div className="blog-chart blog-reveal" data-special-block="chart">
+    <div className="blog-chart blog-reveal is-visible" data-special-block="chart">
       <div className="blog-chart__header">{spec?.title || 'Chart'}</div>
       <div className="blog-chart__canvas">
         <canvas
@@ -161,7 +161,7 @@ function MermaidBlock({ raw }: { raw: string }) {
   }, [raw]);
 
   return (
-    <div className="blog-mermaid blog-reveal" data-special-block="mermaid">
+    <div className="blog-mermaid blog-reveal is-visible" data-special-block="mermaid">
       {failed ? (
         <div className="text-red-500">Failed to render diagram</div>
       ) : (
