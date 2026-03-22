@@ -164,6 +164,8 @@ function MermaidBlock({ raw }: { raw: string }) {
     <div className="blog-mermaid blog-reveal is-visible" data-special-block="mermaid">
       {failed ? (
         <div className="text-red-500">Failed to render diagram</div>
+      ) : !svg ? (
+        <div className="blog-mermaid__placeholder">Rendering diagram...</div>
       ) : (
         <div dangerouslySetInnerHTML={{ __html: svg }} />
       )}
@@ -174,7 +176,7 @@ function MermaidBlock({ raw }: { raw: string }) {
 /**
  * ReactMarkdown wrapper with full plugin support
  */
-export function MarkdownRenderer({
+function MarkdownRendererComponent({
   content,
   children,
   className = '',
@@ -347,4 +349,6 @@ export function MarkdownRenderer({
   );
 }
 
+export const MarkdownRenderer = React.memo(MarkdownRendererComponent);
+MarkdownRenderer.displayName = 'MarkdownRenderer';
 export default MarkdownRenderer;

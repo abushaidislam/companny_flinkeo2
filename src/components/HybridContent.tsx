@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { MarkdownRenderer } from '@/lib/hybrid-renderer';
 import { detectContentType } from '@/lib/content-utils';
@@ -20,7 +20,7 @@ interface HybridContentProps {
  * Auto-detects content type and applies appropriate rendering
  * Includes support for: Math (KaTeX), Charts (Chart.js), Mermaid diagrams, Code highlighting
  */
-export function HybridContent({ content, className = '', onContentProcessed }: HybridContentProps) {
+function HybridContentComponent({ content, className = '', onContentProcessed }: HybridContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const chartInstancesRef = useRef<Chart[]>([]);
   const isMountedRef = useRef(true);
@@ -354,4 +354,6 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
   );
 }
 
+export const HybridContent = memo(HybridContentComponent);
+HybridContent.displayName = 'HybridContent';
 export default HybridContent;

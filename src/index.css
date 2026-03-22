@@ -225,6 +225,11 @@
     @apply mb-6 rounded-xl border border-border bg-card p-4 flex justify-center;
   }
 
+  .blog-content .blog-mermaid__placeholder {
+    @apply flex w-full items-center justify-center text-sm text-muted-foreground;
+    min-height: 180px;
+  }
+
   .blog-content .blog-mermaid svg {
     @apply max-w-full h-auto;
   }
