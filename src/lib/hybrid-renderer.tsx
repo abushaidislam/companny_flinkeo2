@@ -8,6 +8,9 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import type { ReactNode } from 'react';
+import * as React from 'react';
+import { References } from '@/components/References';
+import { hasReferences, parseReferences } from '@/lib/reference-parser';
 
 /**
  * ReactMarkdown wrapper with full plugin support
@@ -22,6 +25,12 @@ export function MarkdownRenderer({
   className?: string;
 }) {
   const textContent = content || (typeof children === 'string' ? children : '');
+
+  // Parse references from markdown content
+  const hasRefs = hasReferences(textContent);
+  const parsed = hasRefs ? parseReferences(textContent) : null;
+  const markdownToRender = parsed?.content || textContent;
+  const references = parsed?.references || [];
 
   return (
     <div className={`prose prose-lg dark:prose-invert max-w-none ${className}`}>
@@ -50,6 +59,16 @@ export function MarkdownRenderer({
                 className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono"
                 {...props}
               >
+                {children}
+              </code>
+            );
+          }
+
+          // Let mermaid and chart blocks be rendered as standard pre/code
+          // so HybridContent can detect and transform them
+          if (language === 'mermaid' || language === 'chart') {
+            return (
+              <code className={className} {...props}>
                 {children}
               </code>
             );
@@ -114,8 +133,9 @@ export function MarkdownRenderer({
         ),
       }}
       >
-        {textContent}
+        {markdownToRender}
       </ReactMarkdown>
+      <References references={references} />
     </div>
   );
 }

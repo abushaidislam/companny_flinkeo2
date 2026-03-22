@@ -319,4 +319,70 @@
   .blog-content a {
     @apply text-primary hover:underline;
   }
+
+  /* MDX-style References/Footnotes */
+  .blog-content .reference-link {
+    @apply inline-flex items-center justify-center text-xs leading-none;
+    vertical-align: super;
+    line-height: 1;
+    margin: 0 0.1em;
+  }
+
+  .blog-content .reference-link a {
+    @apply text-primary hover:text-primary/80 font-medium no-underline;
+    padding: 0 0.15em;
+  }
+
+  .blog-content .reference-link a:hover {
+    @apply underline;
+  }
+
+  .references-section {
+    @apply mt-12 pt-8 border-t border-border;
+  }
+
+  .references-section .references-title {
+    @apply text-lg font-semibold mb-4 text-foreground;
+  }
+
+  .references-section .references-list {
+    @apply list-none pl-0 space-y-2;
+  }
+
+  .references-section .reference-item {
+    @apply flex items-start gap-2 text-sm text-muted-foreground;
+    scroll-margin-top: 100px;
+  }
+
+  .references-section .reference-number {
+    @apply font-medium text-foreground shrink-0;
+    min-width: 1.5em;
+  }
+
+  .references-section .reference-content {
+    @apply flex-1;
+  }
+
+  .references-section .reference-backlink {
+    @apply text-primary hover:text-primary/80 text-xs shrink-0 ml-1 no-underline;
+  }
+
+  .references-section .reference-backlink:hover {
+    @apply underline;
+  }
+
+  /* Highlight animation for references */
+  .reference-highlight {
+    animation: reference-pulse 2s ease-out;
+  }
+
+  @keyframes reference-pulse {
+    0% {
+      background-color: hsl(var(--primary) / 0.2);
+      border-radius: 0.25rem;
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
 }

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DOMPurify from 'dompurify';
 import { ArticleCard } from '@/components/ui/blog-post-card';
-import { detectContentType, markdownToHtml } from '@/lib/hybrid-renderer';
+import { detectContentType, markdownToHtml } from '@/lib/content-utils';
 import { HybridContent } from '@/components/HybridContent';
 
 interface Blog {

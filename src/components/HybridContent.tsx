@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { MarkdownRenderer } from '@/lib/hybrid-renderer';
 import { detectContentType } from '@/lib/content-utils';
+import { parseReferences, hasReferences, generateReferencesHtml, type Reference } from '@/lib/reference-parser';
+import { References } from '@/components/References';
 import renderMathInElement from 'katex/contrib/auto-render';
 import 'katex/dist/katex.min.css';
 import Chart from 'chart.js/auto';
@@ -22,6 +24,7 @@ interface HybridContentProps {
 export function HybridContent({ content, className = '', onContentProcessed }: HybridContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentType, setContentType] = useState<'html' | 'markdown'>('html');
+  const [references, setReferences] = useState<Reference[]>([]);
   const chartInstancesRef = useRef<Chart[]>([]);
   const isMountedRef = useRef(true);
 
@@ -30,6 +33,14 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
     isMountedRef.current = true;
     const type = detectContentType(content);
     setContentType(type);
+
+    // Parse references for HTML content
+    if (type === 'html' && hasReferences(content)) {
+      const parsed = parseReferences(content);
+      setReferences(parsed.references);
+    } else {
+      setReferences([]);
+    }
 
     return () => {
       isMountedRef.current = false;
@@ -63,12 +74,25 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
 
     // 2) Charts
     // Note: markdown renderer may wrap <code> inside extra containers,
-    // so we select any code under <pre>, not only direct children.
-    const chartBlocks = Array.from(root.querySelectorAll('pre code')).filter((code) => {
+    // so we look for code blocks with chart-related classes anywhere in the content.
+    const chartCodeBlocks = Array.from(root.querySelectorAll('code')).filter((code) => {
       const className = (code as HTMLElement).className || '';
       const cls = className.toLowerCase();
       return cls.includes('language-chart') || cls.includes('lang-chart') || cls.includes('chart');
     }) as HTMLElement[];
+
+    // Also support the standard pre > code structure
+    const chartPreBlocks = Array.from(root.querySelectorAll('pre code')).filter((code) => {
+      const className = (code as HTMLElement).className || '';
+      const cls = className.toLowerCase();
+      return cls.includes('language-chart') || cls.includes('lang-chart') || cls.includes('chart');
+    }) as HTMLElement[];
+
+    // Combine and deduplicate
+    const allChartBlocks = [...chartCodeBlocks, ...chartPreBlocks];
+    const chartBlocks = allChartBlocks.filter((code, index, self) => 
+      index === self.findIndex((c) => c === code)
+    );
 
     chartBlocks.forEach((codeEl, idx) => {
       const raw = (codeEl.textContent || '').trim();
@@ -81,8 +105,22 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
         return;
       }
 
-      const pre = codeEl.closest('pre');
-      if (!pre) return;
+      // Find the container to replace - could be pre or the wrapper div
+      let containerToReplace: HTMLElement | null = null;
+      const pre = codeEl.closest('pre') as HTMLElement | null;
+      if (pre) {
+        // If wrapped in a div.relative-group (MarkdownRenderer style), replace the wrapper
+        const wrapper = pre.closest('.relative-group') as HTMLElement | null;
+        containerToReplace = wrapper || pre;
+      } else {
+        // For code blocks not in pre, find the parent my-4 div from MarkdownRenderer
+        const my4Div = codeEl.closest('.my-4') as HTMLElement | null;
+        if (my4Div) {
+          containerToReplace = my4Div;
+        }
+      }
+      
+      if (!containerToReplace) return;
 
       const container = document.createElement('div');
       container.className = 'blog-chart blog-reveal';
@@ -101,7 +139,7 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
       container.appendChild(header);
       container.appendChild(canvasWrap);
 
-      pre.parentNode?.replaceChild(container, pre);
+      containerToReplace.parentNode?.replaceChild(container, containerToReplace);
 
       try {
         const chart = new Chart(canvas, {
@@ -126,10 +164,8 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
     });
 
     // 3) Mermaid diagrams
+    // Look for code blocks with mermaid-related content or classes
     const mermaidBlocks = Array.from(root.querySelectorAll('code')).filter((code) => {
-      const pre = (code as HTMLElement).closest('pre');
-      if (!pre) return false;
-
       const className = (code as HTMLElement).className || '';
       const cls = className.toLowerCase();
 
@@ -141,17 +177,17 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
       const looksLikeMermaid =
         rawLower.startsWith('flowchart') ||
         rawLower.startsWith('graph ') ||
-        rawLower.startsWith('sequenceDiagram'.toLowerCase()) ||
+        rawLower.startsWith('sequencediagram') ||
         rawLower.startsWith('xychart-beta') ||
         rawLower.startsWith('pie') ||
         rawLower.startsWith('gantt') ||
-        rawLower.startsWith('classDiagram'.toLowerCase()) ||
-        rawLower.startsWith('erDiagram'.toLowerCase()) ||
+        rawLower.startsWith('classdiagram') ||
+        rawLower.startsWith('erdiagram') ||
         rawLower.startsWith('journey') ||
-        rawLower.startsWith('gitgraph'.toLowerCase()) ||
-        rawLower.startsWith('mindmap'.toLowerCase()) ||
-        rawLower.startsWith('timeline'.toLowerCase()) ||
-        rawLower.startsWith('quadrantchart'.toLowerCase());
+        rawLower.startsWith('gitgraph') ||
+        rawLower.startsWith('mindmap') ||
+        rawLower.startsWith('timeline') ||
+        rawLower.startsWith('quadrantchart');
 
       const classLooksMermaid =
         cls.includes('language-mermaid') || cls.includes('lang-mermaid') || cls.includes('mermaid');
@@ -181,8 +217,22 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
         // Example: "MERMAID xychart-beta ..." -> "xychart-beta ..."
         const cleanedRaw = raw.replace(/^mermaid\s+/i, '').trim();
 
-        const pre = codeEl.closest('pre');
-        if (!pre) return;
+        // Find the container to replace - could be pre or the wrapper div
+        let containerToReplace: HTMLElement | null = null;
+        const pre = codeEl.closest('pre') as HTMLElement | null;
+        if (pre) {
+          // If wrapped in a div.relative-group (MarkdownRenderer style), replace the wrapper
+          const wrapper = pre.closest('.relative-group') as HTMLElement | null;
+          containerToReplace = wrapper || pre;
+        } else {
+          // For code blocks not in pre, find the parent my-4 div from MarkdownRenderer
+          const my4Div = codeEl.closest('.my-4') as HTMLElement | null;
+          if (my4Div) {
+            containerToReplace = my4Div;
+          }
+        }
+        
+        if (!containerToReplace) return;
 
         const container = document.createElement('div');
         container.className = 'blog-mermaid blog-reveal';
@@ -193,12 +243,12 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
           mermaid.render(id, cleanedRaw).then(({ svg }) => {
             if (!isMountedRef.current) return;
             container.innerHTML = svg;
-            pre.parentNode?.replaceChild(container, pre);
+            containerToReplace?.parentNode?.replaceChild(container, containerToReplace);
           }).catch((err) => {
             if (!isMountedRef.current) return;
             console.error('Mermaid render error:', err);
             container.innerHTML = `<div class="text-red-500">Failed to render diagram</div>`;
-            pre.parentNode?.replaceChild(container, pre);
+            containerToReplace?.parentNode?.replaceChild(container, containerToReplace);
           });
         } catch (e) {
           console.error('Mermaid error:', e);
@@ -302,8 +352,13 @@ export function HybridContent({ content, className = '', onContentProcessed }: H
     );
   }
 
-  // For HTML content - use processed HTML with DOMPurify
-  const sanitized = DOMPurify.sanitize(content);
+  // For HTML content - process references and use DOMPurify
+  let htmlContent = content;
+  if (hasReferences(content)) {
+    const parsed = parseReferences(content);
+    htmlContent = parsed.content + generateReferencesHtml(parsed.references);
+  }
+  const sanitized = DOMPurify.sanitize(htmlContent);
 
   return (
     <div
