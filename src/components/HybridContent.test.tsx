@@ -121,4 +121,19 @@ describe('HybridContent special blocks', () => {
     expect(container.querySelector('#cite-1')).not.toBeNull();
     expect(container.querySelector('#ref-1')).not.toBeNull();
   });
+
+  it('marks Bengali content with lang=bn and localizes references', async () => {
+    const content = [
+      'বাংলা লেখা[^bn].',
+      '',
+      '[^bn]: বাংলা রেফারেন্স',
+    ].join('\n');
+
+    const { container } = render(<HybridContent content={content} />);
+
+    await screen.findByText('রেফারেন্স');
+
+    expect(container.firstElementChild).toHaveAttribute('lang', 'bn');
+    expect(container.textContent).toContain('রেফারেন্স');
+  });
 });

@@ -40,6 +40,10 @@ export function isMarkdownContent(content: string): boolean {
   return detectContentType(content) === 'markdown';
 }
 
+export function containsBengaliText(content: string): boolean {
+  return /[\u0980-\u09FF]/.test(content);
+}
+
 function normalizeHeadingText(text: string): string {
   return text
     .replace(/\[(.*?)\]\((.*?)\)/g, '$1')

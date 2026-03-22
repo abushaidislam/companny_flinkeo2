@@ -14,6 +14,12 @@ import Chart from 'chart.js/auto';
 import type { ChartData, ChartType } from 'chart.js';
 import { References } from '@/components/References';
 import { hasReferences, parseReferences } from '@/lib/reference-parser';
+import { containsBengaliText } from '@/lib/content-utils';
+
+const BLOG_VISUAL_FONT_STACK = "'Anek Bangla', 'Noto Sans Bengali', 'Plus Jakarta Sans', 'Inter', sans-serif";
+if (Chart.defaults?.font) {
+  Chart.defaults.font.family = BLOG_VISUAL_FONT_STACK;
+}
 
 function extractTextContent(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') {
@@ -73,6 +79,7 @@ type ChartSpec = {
 
 function ChartBlock({ raw }: { raw: string }) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const isBangla = React.useMemo(() => containsBengaliText(raw), [raw]);
   const spec = React.useMemo<ChartSpec | null>(() => {
     try {
       return JSON.parse(raw) as ChartSpec;
@@ -92,6 +99,7 @@ function ChartBlock({ raw }: { raw: string }) {
         responsive: true,
         maintainAspectRatio: false,
         animation: { duration: 900, easing: 'easeOutQuart' },
+        locale: isBangla ? 'bn-BD' : 'en-US',
         plugins: {
           legend: { display: (spec.options?.legend as boolean) !== false },
           title: { display: false },
@@ -104,7 +112,7 @@ function ChartBlock({ raw }: { raw: string }) {
     return () => {
       chart.destroy();
     };
-  }, [spec]);
+  }, [spec, isBangla]);
 
   if (!spec) {
     return (
@@ -115,8 +123,12 @@ function ChartBlock({ raw }: { raw: string }) {
   }
 
   return (
-    <div className="blog-chart blog-reveal is-visible" data-special-block="chart">
-      <div className="blog-chart__header">{spec?.title || 'Chart'}</div>
+    <div
+      className="blog-chart blog-reveal is-visible"
+      data-special-block="chart"
+      lang={isBangla ? 'bn' : undefined}
+    >
+      <div className="blog-chart__header">{spec?.title || (isBangla ? 'চার্ট' : 'Chart')}</div>
       <div className="blog-chart__canvas">
         <canvas
           ref={canvasRef}
@@ -130,6 +142,7 @@ function ChartBlock({ raw }: { raw: string }) {
 function MermaidBlock({ raw }: { raw: string }) {
   const [svg, setSvg] = React.useState('');
   const [failed, setFailed] = React.useState(false);
+  const isBangla = React.useMemo(() => containsBengaliText(raw), [raw]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -140,6 +153,22 @@ function MermaidBlock({ raw }: { raw: string }) {
       startOnLoad: false,
       theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
       securityLevel: 'loose',
+      themeVariables: {
+        fontFamily: BLOG_VISUAL_FONT_STACK,
+      },
+      themeCSS: `
+        #${id},
+        #${id} text,
+        #${id} tspan,
+        #${id} foreignObject,
+        #${id} foreignObject div,
+        #${id} span,
+        #${id} p {
+          font-family: ${BLOG_VISUAL_FONT_STACK};
+          letter-spacing: normal;
+          word-break: break-word;
+        }
+      `,
     });
 
     mermaid
@@ -161,11 +190,15 @@ function MermaidBlock({ raw }: { raw: string }) {
   }, [raw]);
 
   return (
-    <div className="blog-mermaid blog-reveal is-visible" data-special-block="mermaid">
+    <div
+      className="blog-mermaid blog-reveal is-visible"
+      data-special-block="mermaid"
+      lang={isBangla ? 'bn' : undefined}
+    >
       {failed ? (
-        <div className="text-red-500">Failed to render diagram</div>
+        <div className="text-red-500">{isBangla ? 'ডায়াগ্রাম রেন্ডার করা যায়নি' : 'Failed to render diagram'}</div>
       ) : !svg ? (
-        <div className="blog-mermaid__placeholder">Rendering diagram...</div>
+        <div className="blog-mermaid__placeholder">{isBangla ? 'ডায়াগ্রাম রেন্ডার হচ্ছে...' : 'Rendering diagram...'}</div>
       ) : (
         <div dangerouslySetInnerHTML={{ __html: svg }} />
       )}
@@ -186,6 +219,7 @@ function MarkdownRendererComponent({
   className?: string;
 }) {
   const textContent = content || (typeof children === 'string' ? children : '');
+  const contentLang = containsBengaliText(textContent) ? 'bn' : undefined;
 
   // Parse references from markdown content
   const hasRefs = hasReferences(textContent);
@@ -344,7 +378,7 @@ function MarkdownRendererComponent({
       >
         {markdownToRender}
       </ReactMarkdown>
-      <References references={references} />
+      <References references={references} lang={contentLang} />
     </div>
   );
 }

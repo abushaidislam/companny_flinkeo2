@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeBlogDetailContent } from '@/lib/content-utils';
+import { containsBengaliText, normalizeBlogDetailContent } from '@/lib/content-utils';
 
 describe('normalizeBlogDetailContent', () => {
   it('removes a duplicated leading markdown h1 that matches the blog headline', () => {
@@ -34,5 +34,12 @@ describe('normalizeBlogDetailContent', () => {
     const content = '<h1>The AI Revolution</h1><p>Intro paragraph.</p>';
 
     expect(normalizeBlogDetailContent(content, 'The AI Revolution')).toBe('<p>Intro paragraph.</p>');
+  });
+});
+
+describe('containsBengaliText', () => {
+  it('detects Bengali script in mixed content', () => {
+    expect(containsBengaliText('Diagram: বাংলা')).toBe(true);
+    expect(containsBengaliText('Diagram: English')).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { MarkdownRenderer } from '@/lib/hybrid-renderer';
-import { detectContentType } from '@/lib/content-utils';
+import { containsBengaliText, detectContentType } from '@/lib/content-utils';
 import { parseReferences, hasReferences, generateReferencesHtml } from '@/lib/reference-parser';
 import renderMathInElement from 'katex/contrib/auto-render';
 import 'katex/dist/katex.min.css';
@@ -25,6 +25,7 @@ function HybridContentComponent({ content, className = '', onContentProcessed }:
   const chartInstancesRef = useRef<Chart[]>([]);
   const isMountedRef = useRef(true);
   const contentType = useMemo(() => detectContentType(content), [content]);
+  const contentLang = useMemo(() => (containsBengaliText(content) ? 'bn' : undefined), [content]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -331,7 +332,7 @@ function HybridContentComponent({ content, className = '', onContentProcessed }:
   // For Markdown content
   if (contentType === 'markdown') {
     return (
-      <div ref={contentRef} className={`blog-content markdown-content ${className}`}>
+      <div ref={contentRef} className={`blog-content markdown-content ${className}`} lang={contentLang}>
         <MarkdownRenderer content={content} />
       </div>
     );
@@ -349,6 +350,7 @@ function HybridContentComponent({ content, className = '', onContentProcessed }:
     <div
       ref={contentRef}
       className={`blog-content ${className}`}
+      lang={contentLang}
       dangerouslySetInnerHTML={{ __html: sanitized }}
     />
   );
