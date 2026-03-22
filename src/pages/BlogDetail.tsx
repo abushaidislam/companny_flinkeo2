@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DOMPurify from 'dompurify';
 import { ArticleCard } from '@/components/ui/blog-post-card';
-import { detectContentType, markdownToHtml } from '@/lib/content-utils';
+import { detectContentType, markdownToHtml, normalizeBlogDetailContent } from '@/lib/content-utils';
 import { HybridContent } from '@/components/HybridContent';
 
 interface Blog {
@@ -46,6 +46,10 @@ export default function BlogDetail() {
 
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const tocObserverRef = useRef<IntersectionObserver | null>(null);
+  const normalizedContent = useMemo(
+    () => normalizeBlogDetailContent(blog?.content || '', blog?.headline || ''),
+    [blog?.content, blog?.headline]
+  );
 
   useEffect(() => {
     return () => {
@@ -96,18 +100,18 @@ export default function BlogDetail() {
   // Process content to add anchor IDs to headings (for TOC + heading links)
   const processedContent = useMemo(() => {
     const result: { html: string; headings: TocHeading[] } = { html: '', headings: [] };
-    if (!blog?.content) return result;
+    if (!normalizedContent) return result;
 
     // Detect content type
-    const contentType = detectContentType(blog.content);
+    const contentType = detectContentType(normalizedContent);
 
     // Convert markdown to HTML for processing if needed
     let htmlContent: string;
     if (contentType === 'markdown') {
       // Simple markdown to HTML conversion for TOC extraction
-      htmlContent = markdownToHtml(blog.content);
+      htmlContent = markdownToHtml(normalizedContent);
     } else {
-      htmlContent = blog.content;
+      htmlContent = normalizedContent;
     }
 
     const sanitized = DOMPurify.sanitize(htmlContent);
@@ -189,7 +193,7 @@ export default function BlogDetail() {
 
     result.html = tempDiv.innerHTML;
     return result;
-  }, [blog?.content]);
+  }, [normalizedContent]);
 
   const tocHeadings = processedContent.headings;
 
@@ -375,8 +379,8 @@ export default function BlogDetail() {
 
       {/* Content */}
       <article className="container mx-auto px-4 pb-16">
-        <div className="max-w-6xl mx-auto flex gap-10">
-          <div className="flex-1 max-w-3xl">
+        <div className="max-w-6xl mx-auto flex flex-col gap-10 lg:flex-row">
+          <div className="min-w-0 flex-1 lg:max-w-3xl">
             {/* Meta */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -458,8 +462,8 @@ export default function BlogDetail() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              {blog.content && (
-                <HybridContent content={blog.content} />
+              {normalizedContent && (
+                <HybridContent content={normalizedContent} />
               )}
             </motion.div>
 

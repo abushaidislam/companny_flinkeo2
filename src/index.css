@@ -188,8 +188,9 @@
   }
 
   .blog-content table {
-    @apply w-full border-collapse;
-    min-width: 640px;
+    @apply border-collapse;
+    width: max-content;
+    min-width: 100%;
   }
 
   .blog-content th,
@@ -362,6 +363,7 @@
 
   .references-section .reference-content {
     @apply flex-1;
+    overflow-wrap: anywhere;
   }
 
   .references-section .reference-backlink {

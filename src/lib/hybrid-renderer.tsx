@@ -258,7 +258,7 @@ export function MarkdownRenderer({
         },
         table: ({ children }) => (
           <div className="overflow-x-auto my-4">
-            <table className="w-full border-collapse border border-border">
+            <table className="min-w-full w-max border-collapse border border-border">
               {children}
             </table>
           </div>

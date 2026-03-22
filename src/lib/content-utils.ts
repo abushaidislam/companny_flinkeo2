@@ -40,6 +40,53 @@ export function isMarkdownContent(content: string): boolean {
   return detectContentType(content) === 'markdown';
 }
 
+function normalizeHeadingText(text: string): string {
+  return text
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+    .replace(/[*_~`#>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Remove a duplicated leading H1 when the page already renders the blog headline.
+ * This keeps the detail view from showing the same title twice.
+ */
+export function normalizeBlogDetailContent(content: string, headline: string): string {
+  if (!content || !headline) return content;
+
+  const normalizedHeadline = normalizeHeadingText(headline);
+  const contentType = detectContentType(content);
+
+  if (contentType === 'markdown') {
+    const headingMatch = content.match(/^\s*#\s+(.+?)\s*(?:\r?\n|$)/);
+    if (!headingMatch) return content;
+
+    if (normalizeHeadingText(headingMatch[1]) !== normalizedHeadline) {
+      return content;
+    }
+
+    return content.replace(/^\s*#\s+(.+?)\s*(\r?\n)+/, '').trimStart();
+  }
+
+  if (typeof DOMParser !== 'undefined') {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, 'text/html');
+    const firstElement = doc.body.firstElementChild;
+
+    if (
+      firstElement?.tagName.toLowerCase() === 'h1' &&
+      normalizeHeadingText(firstElement.textContent || '') === normalizedHeadline
+    ) {
+      firstElement.remove();
+      return doc.body.innerHTML.trimStart();
+    }
+  }
+
+  return content;
+}
+
 /**
  * Simple markdown-to-html converter for basic needs
  * Uses regex-based conversion (not as robust as a full parser)
