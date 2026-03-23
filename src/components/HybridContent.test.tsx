@@ -83,6 +83,40 @@ describe('HybridContent special blocks', () => {
     });
   });
 
+  it('does not leak following prose into rendered mermaid source', async () => {
+    const content = [
+      '```mermaid',
+      'flowchart TD',
+      '    A[Traditional Jobs] --> B{AI Impact Level}',
+      '    B -->|High| C[Task Automation]',
+      '    B -->|Medium| D[Augmentation]',
+      '    B -->|Low| E[Minimal Change]',
+      '    C --> F[Role Redefinition]',
+      '    D --> G[Productivity Boost]',
+      '    F --> H[New Job Categories]',
+      '    G --> H',
+      '    E --> I[Stable Demand]',
+      '```',
+      '',
+      'The diagram above shows how AI changes roles instead of simply deleting them.',
+    ].join('\n');
+
+    render(<HybridContent content={content} />);
+
+    await waitFor(() => {
+      expect(mermaidRenderMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mermaidRenderMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('G --> H')
+    );
+    expect(mermaidRenderMock).not.toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('The diagram above shows')
+    );
+  });
+
   it('upgrades html code blocks into visual chart and mermaid output', async () => {
     const content = [
       '<pre><code class="language-chart">',

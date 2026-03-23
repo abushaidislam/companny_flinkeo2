@@ -16,6 +16,12 @@ import { References } from '@/components/References';
 import { hasReferences, parseReferences } from '@/lib/reference-parser';
 import { containsBengaliText } from '@/lib/content-utils';
 
+type MarkdownNode = {
+  type?: string;
+  value?: string;
+  children?: MarkdownNode[];
+};
+
 const BLOG_VISUAL_FONT_STACK = "'Anek Bangla', 'Noto Sans Bengali', 'Plus Jakarta Sans', 'Inter', sans-serif";
 if (Chart.defaults?.font) {
   Chart.defaults.font.family = BLOG_VISUAL_FONT_STACK;
@@ -35,6 +41,29 @@ function extractTextContent(node: ReactNode): string {
   }
 
   return '';
+}
+
+function extractMarkdownNodeText(node?: MarkdownNode): string {
+  if (!node) return '';
+
+  if (node.type === 'text' && typeof node.value === 'string') {
+    return node.value;
+  }
+
+  if (Array.isArray(node.children)) {
+    return node.children.map(extractMarkdownNodeText).join('');
+  }
+
+  return '';
+}
+
+function extractCodeBlockRaw(node: MarkdownNode | undefined, fallbackChildren: ReactNode): string {
+  const fromNode = extractMarkdownNodeText(node);
+  if (fromNode) {
+    return fromNode;
+  }
+
+  return extractTextContent(fallbackChildren);
 }
 
 function looksLikeMermaid(raw: string) {
@@ -251,9 +280,9 @@ function MarkdownRendererComponent({
             </div>
           );
         },
-        code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
+        code: ({ className, children, node, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean; node?: MarkdownNode }) => {
           const { inline, ...codeProps } = props;
-          const raw = extractTextContent(children).replace(/\n$/, '');
+          const raw = extractCodeBlockRaw(node, children).replace(/\n$/, '');
           const isInline = inline ?? !className;
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
