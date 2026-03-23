@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { CheckCircle, Loader2, Send } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -10,15 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { Send, CheckCircle, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import SectionIntro from '@/components/landing/SectionIntro';
+import { primaryConsultationLabel } from '@/data/landing-content';
 import { submitContactForm } from '@/lib/supabase';
 
 interface ContactFormData {
@@ -80,7 +82,7 @@ const ContactForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -93,7 +95,6 @@ const ContactForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Split name into first and last
       const nameParts = formData.name.trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -109,13 +110,14 @@ const ContactForm = () => {
       });
 
       setShowSuccess(true);
-      toast.success('Message Sent!', {
-        description: "We'll get back to you within 24 hours.",
+      toast.success('Consultation request sent', {
+        description: 'We will reply with a practical next step within 24 hours.',
       });
     } catch (error) {
       console.error('Form submission error:', error);
       const detail =
         error instanceof Error ? error.message : 'Unknown submission error';
+
       toast.error('Failed to send message', {
         description:
           detail === 'Unknown submission error'
@@ -147,25 +149,18 @@ const ContactForm = () => {
   };
 
   return (
-    <section id="contact" className="py-24 relative">
+    <section id="contact" className="relative py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Let's Build Something{' '}
-              <span className="gradient-text">Amazing Together</span>
-            </h2>
-            <p className="text-text-secondary text-lg">
-              Tell us about your project and we'll get back to you within 24
-              hours.
-            </p>
-          </div>
+        <div className="mx-auto max-w-3xl">
+          <SectionIntro
+            eyebrow="Contact"
+            title="Tell us about the project you need help moving forward."
+            description="Share the business goal, budget range, and timeline. We will reply with a practical next step within 24 hours."
+            className="mb-10"
+          />
 
-          <form
-            onSubmit={handleSubmit}
-            className="glass-card p-8 space-y-6"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="glass-card space-y-6 p-8">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">
                   Full Name <span className="text-red-500">*</span>
@@ -177,9 +172,9 @@ const ContactForm = () => {
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   className={errors.name ? 'border-red-500' : ''}
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-sm">{errors.name}</p>
-                )}
+                {errors.name ? (
+                  <p className="text-sm text-red-500">{errors.name}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -194,13 +189,13 @@ const ContactForm = () => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className={errors.email ? 'border-red-500' : ''}
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-sm">{errors.email}</p>
-                )}
+                {errors.email ? (
+                  <p className="text-sm text-red-500">{errors.email}</p>
+                ) : null}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>
                   Project Type <span className="text-red-500">*</span>
@@ -225,9 +220,9 @@ const ContactForm = () => {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.projectType && (
-                  <p className="text-red-500 text-sm">{errors.projectType}</p>
-                )}
+                {errors.projectType ? (
+                  <p className="text-sm text-red-500">{errors.projectType}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -251,9 +246,9 @@ const ContactForm = () => {
                     <SelectItem value="not-sure">Not sure yet</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.budget && (
-                  <p className="text-red-500 text-sm">{errors.budget}</p>
-                )}
+                {errors.budget ? (
+                  <p className="text-sm text-red-500">{errors.budget}</p>
+                ) : null}
               </div>
             </div>
 
@@ -268,9 +263,9 @@ const ContactForm = () => {
                 onChange={(e) => handleInputChange('message', e.target.value)}
                 className={`min-h-[120px] ${errors.message ? 'border-red-500' : ''}`}
               />
-              {errors.message && (
-                <p className="text-red-500 text-sm">{errors.message}</p>
-              )}
+              {errors.message ? (
+                <p className="text-sm text-red-500">{errors.message}</p>
+              ) : null}
             </div>
 
             <Button
@@ -287,13 +282,15 @@ const ContactForm = () => {
                 </>
               ) : (
                 <>
-                  Send Message <Send className="ml-2 h-5 w-5" />
+                  {primaryConsultationLabel}
+                  <Send className="ml-2 h-5 w-5" />
                 </>
               )}
             </Button>
 
             <p className="text-center text-xs text-text-secondary">
-              Free consultation • No commitment required • Response within 24h
+              Free consultation. No commitment required. Response within 24
+              hours.
             </p>
           </form>
         </div>
@@ -302,18 +299,18 @@ const ContactForm = () => {
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <DialogTitle className="text-center text-2xl">
-              Message Sent Successfully!
+              Consultation Request Sent
             </DialogTitle>
             <DialogDescription className="text-center">
               Thank you for reaching out. Our team will review your project
               details and get back to you within 24 hours.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center mt-6">
+          <div className="mt-6 flex justify-center">
             <Button onClick={resetForm} variant="hero">
               Send Another Message
             </Button>

@@ -1,6 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import {
+  Building2,
+  CodeIcon,
+  FileText,
+  GlobeIcon,
+  Handshake,
+  HelpCircle,
+  Leaf,
+  Palette,
+  PenTool,
+  RotateCcw,
+  Search,
+  Shield,
+  Smartphone,
+  Star,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
@@ -8,30 +26,11 @@ import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { type LucideIcon } from 'lucide-react';
 import ThemeToggle from '@/components/ui/theme-toggle';
-import {
-  CodeIcon,
-  GlobeIcon,
-  Palette,
-  Users,
-  Star,
-  FileText,
-  Shield,
-  RotateCcw,
-  Handshake,
-  Leaf,
-  HelpCircle,
-  PenTool,
-  Smartphone,
-  Search,
-  Building2,
-  Briefcase,
-} from 'lucide-react';
+import { primaryConsultationLabel } from '@/data/landing-content';
 
 type LinkItem = {
   title: string;
@@ -49,41 +48,41 @@ const serviceLinks: LinkItem[] = [
   },
   {
     title: 'Web Development',
-    href: '/services#web-development',
-    description: 'Custom websites built with modern technologies',
+    href: '/#services',
+    description: 'Custom websites built for speed, clarity, and conversion',
     icon: CodeIcon,
   },
   {
     title: 'UI/UX Design',
-    href: '/services#ui-ux-design',
-    description: 'Beautiful interfaces that users love',
+    href: '/#services',
+    description: 'Interface systems that make complex products feel simple',
     icon: PenTool,
   },
   {
     title: 'Mobile-First Design',
-    href: '/services#mobile-apps',
-    description: 'Responsive experiences across all devices',
+    href: '/#services',
+    description: 'Responsive experiences built around mobile behavior first',
     icon: Smartphone,
   },
   {
     title: 'Brand Identity',
-    href: '/services#branding',
-    description: 'Cohesive visual identities for your brand',
+    href: '/#work',
+    description: 'Positioning and visual identity applied to real launches',
     icon: Palette,
   },
   {
     title: 'SEO & Performance',
-    href: '/services#growth-marketing',
-    description: 'Optimize speed, reach, and conversions',
+    href: '/#pricing',
+    description: 'Scope work around speed, discoverability, and business goals',
     icon: Search,
   },
 ];
 
 const companyLinks: LinkItem[] = [
   {
-    title: 'About Us',
-    href: '/#how-it-works',
-    description: 'Learn more about our story and team',
+    title: 'Our Process',
+    href: '/#process',
+    description: 'See how we move from strategy to launch without guesswork',
     icon: Building2,
   },
   {
@@ -95,14 +94,14 @@ const companyLinks: LinkItem[] = [
   {
     title: 'Client Stories',
     href: '/#testimonials',
-    description: "See how we've helped our clients succeed",
+    description: 'Proof from teams that trusted us with product and brand work',
     icon: Star,
   },
   {
-    title: 'Partnerships',
-    href: '/#pricing',
+    title: 'Case Studies',
+    href: '/#work',
+    description: 'Review selected projects and the outcomes behind them',
     icon: Handshake,
-    description: 'Collaborate with us for mutual growth',
   },
 ];
 
@@ -111,7 +110,7 @@ const companyLinks2: LinkItem[] = [
   { title: 'Privacy Policy', href: '#', icon: Shield },
   { title: 'Refund Policy', href: '#', icon: RotateCcw },
   { title: 'Blog', href: '/blog', icon: Leaf },
-  { title: 'Help Center', href: '#faq', icon: HelpCircle },
+  { title: 'Help Center', href: '/#faq', icon: HelpCircle },
 ];
 
 function useScroll(threshold: number) {
@@ -138,7 +137,6 @@ const Navbar = () => {
   const scrolled = useScroll(10);
   const location = window.location;
 
-  // Close mobile menu on route change
   React.useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
@@ -149,6 +147,7 @@ const Navbar = () => {
     } else {
       document.body.style.overflow = '';
     }
+
     return () => {
       document.body.style.overflow = '';
     };
@@ -157,30 +156,27 @@ const Navbar = () => {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 w-full border-b transition-all duration-300',
+        'fixed left-0 right-0 top-0 z-50 w-full border-b transition-all duration-300',
         scrolled
-          ? 'bg-background/80 backdrop-blur-xl border-border shadow-sm'
-          : 'bg-transparent border-transparent',
+          ? 'border-border bg-background/80 shadow-sm backdrop-blur-xl'
+          : 'border-transparent bg-transparent',
       )}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        {/* Logo */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2">
             <img src="/favicon.svg" alt="Flinke" className="h-9 w-9" />
-            <span className="font-display font-bold text-lg text-foreground tracking-tight">
+            <span className="font-display text-lg font-bold tracking-tight text-foreground">
               Flinke
             </span>
           </Link>
         </div>
 
-        {/* Desktop Nav - Centered */}
-        <div className="hidden md:flex flex-1 justify-center">
+        <div className="hidden flex-1 justify-center md:flex">
           <NavigationMenu>
             <NavigationMenuList className="space-x-1">
-              {/* Services Mega Menu */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="h-9 bg-transparent px-3 text-muted-foreground hover:text-foreground hover:bg-accent/60 focus:bg-accent/60">
+                <NavigationMenuTrigger className="h-9 bg-transparent px-3 text-muted-foreground hover:bg-accent/60 hover:text-foreground focus:bg-accent/60">
                   Services
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -196,16 +192,15 @@ const Navbar = () => {
                         to="/services"
                         className="font-medium text-foreground underline underline-offset-4"
                       >
-                        View all services →
+                        View all services
                       </Link>
                     </p>
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
-              {/* Company Mega Menu */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="h-9 bg-transparent px-3 text-muted-foreground hover:text-foreground hover:bg-accent/60 focus:bg-accent/60">
+                <NavigationMenuTrigger className="h-9 bg-transparent px-3 text-muted-foreground hover:bg-accent/60 hover:text-foreground focus:bg-accent/60">
                   Company
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -216,12 +211,12 @@ const Navbar = () => {
                       ))}
                     </div>
                     <div className="flex flex-col gap-0.5 border-l border-border pl-3">
-                      {companyLinks2.map((item) => (
+                      {companyLinks2.map((item) =>
                         item.href.startsWith('/') ? (
                           <Link
                             key={item.title}
                             to={item.href}
-                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/60"
+                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                           >
                             <item.icon className="h-4 w-4" />
                             {item.title}
@@ -230,19 +225,18 @@ const Navbar = () => {
                           <a
                             key={item.title}
                             href={item.href}
-                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/60"
+                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                           >
                             <item.icon className="h-4 w-4" />
                             {item.title}
                           </a>
-                        )
-                      ))}
+                        ),
+                      )}
                     </div>
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
-              {/* Pricing Link */}
               <NavigationMenuItem>
                 <Link
                   to="/#pricing"
@@ -252,17 +246,15 @@ const Navbar = () => {
                 </Link>
               </NavigationMenuItem>
 
-              {/* Portfolio Link */}
               <NavigationMenuItem>
                 <Link
-                  to="/#portfolio"
+                  to="/#work"
                   className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus:bg-accent/60 focus:text-foreground focus:outline-none"
                 >
-                  Portfolio
+                  Work
                 </Link>
               </NavigationMenuItem>
 
-              {/* Contact Link */}
               <NavigationMenuItem>
                 <Link
                   to="/contact"
@@ -275,8 +267,7 @@ const Navbar = () => {
           </NavigationMenu>
         </div>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -284,17 +275,16 @@ const Navbar = () => {
             className="text-muted-foreground hover:text-foreground"
             asChild
           >
-            <Link to="/#portfolio">Our Work</Link>
+            <Link to="/#work">Our Work</Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <Link to="/contact">Contact Us</Link>
+            <Link to="/#contact">{primaryConsultationLabel}</Link>
           </Button>
         </div>
 
-        {/* Mobile Toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden p-2 text-foreground"
+          className="p-2 text-foreground md:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label="Toggle menu"
@@ -303,18 +293,16 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <MobileMenu open={open}>
         <div className="flex-1 overflow-y-auto p-6">
           <nav className="grid gap-1">
-            {/* Services Section */}
-            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Services
             </p>
             <Link
               to="/services"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent/60 transition-colors bg-accent/30"
+              className="flex items-center gap-3 rounded-lg bg-accent/30 px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/60"
             >
               <GlobeIcon className="h-4 w-4" />
               All Services
@@ -324,22 +312,34 @@ const Navbar = () => {
                 key={link.title}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
               >
                 <link.icon className="h-4 w-4" />
                 {link.title}
               </a>
             ))}
-            <p className="px-3 py-2 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+
+            <p className="mt-4 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Company
             </p>
             {companyLinks.map((link) => (
+              <Link
+                key={link.title}
+                to={link.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+              >
+                <link.icon className="h-4 w-4" />
+                {link.title}
+              </Link>
+            ))}
+            {companyLinks2.map((link) =>
               link.href.startsWith('/') ? (
                 <Link
                   key={link.title}
                   to={link.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                 >
                   <link.icon className="h-4 w-4" />
                   {link.title}
@@ -349,47 +349,24 @@ const Navbar = () => {
                   key={link.title}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                 >
                   <link.icon className="h-4 w-4" />
                   {link.title}
                 </a>
-              )
-            ))}
-            {companyLinks2.map((link) => (
-              link.href.startsWith('/') ? (
-                <Link
-                  key={link.title}
-                  to={link.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
-                >
-                  <link.icon className="h-4 w-4" />
-                  {link.title}
-                </Link>
-              ) : (
-                <a
-                  key={link.title}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
-                >
-                  <link.icon className="h-4 w-4" />
-                  {link.title}
-                </a>
-              )
-            ))}
+              ),
+            )}
           </nav>
         </div>
-        <div className="border-t border-border p-4 grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 border-t border-border p-4">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/#portfolio" onClick={() => setOpen(false)}>
+            <Link to="/#work" onClick={() => setOpen(false)}>
               Our Work
             </Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <Link to="/contact" onClick={() => setOpen(false)}>
-              Get a Quote
+            <Link to="/#contact" onClick={() => setOpen(false)}>
+              {primaryConsultationLabel}
             </Link>
           </Button>
         </div>
@@ -406,21 +383,14 @@ function MobileMenu({ open, children }: MobileMenuProps) {
   if (!open || typeof window === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 mt-16 flex flex-col bg-background md:hidden animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="animate-in fade-in slide-in-from-top-2 fixed inset-0 z-50 mt-16 flex flex-col bg-background duration-200 md:hidden">
       {children}
     </div>,
     document.body,
   );
 }
 
-function ListItem({
-  title,
-  description,
-  icon: Icon,
-  href,
-}: LinkItem) {
-  // Check if it's a router link (starts with / but not //)
-  const isRouterLink = href.startsWith('/') && !href.startsWith('//');
+function ListItem({ title, description, icon: Icon, href }: LinkItem) {
   const content = (
     <>
       <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border bg-background">
@@ -428,33 +398,22 @@ function ListItem({
       </div>
       <div>
         <p className="text-sm font-medium text-foreground">{title}</p>
-        {description && (
-          <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+        {description ? (
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {description}
           </p>
-        )}
+        ) : null}
       </div>
     </>
   );
 
-  if (isRouterLink) {
-    return (
-      <Link
-        to={href}
-        className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-accent/60"
-      >
-        {content}
-      </Link>
-    );
-  }
-
   return (
-    <a
-      href={href}
+    <Link
+      to={href}
       className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-accent/60"
     >
       {content}
-    </a>
+    </Link>
   );
 }
 
