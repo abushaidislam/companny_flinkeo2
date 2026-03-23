@@ -213,7 +213,7 @@ function HybridContentComponent({ content, className = '', onContentProcessed }:
           try {
             mermaid.render(id, cleanedRaw).then(({ svg }) => {
               if (!isMountedRef.current) return;
-              container.innerHTML = svg;
+              container.innerHTML = `<div class="blog-mermaid__svg-wrap">${svg}</div>`;
               containerToReplace?.parentNode?.replaceChild(container, containerToReplace);
             }).catch((err) => {
               if (!isMountedRef.current) return;

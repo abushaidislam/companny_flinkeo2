@@ -200,7 +200,7 @@ function MermaidBlock({ raw }: { raw: string }) {
       ) : !svg ? (
         <div className="blog-mermaid__placeholder">{isBangla ? 'ডায়াগ্রাম রেন্ডার হচ্ছে...' : 'Rendering diagram...'}</div>
       ) : (
-        <div dangerouslySetInnerHTML={{ __html: svg }} />
+        <div className="blog-mermaid__svg-wrap" dangerouslySetInnerHTML={{ __html: svg }} />
       )}
     </div>
   );

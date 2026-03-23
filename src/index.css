@@ -222,7 +222,10 @@
 
   /* Mermaid diagrams */
   .blog-content .blog-mermaid {
-    @apply mb-6 rounded-xl border border-border bg-card p-4 flex justify-center;
+    @apply mb-6 flex justify-center;
+    background: transparent;
+    border: 0;
+    padding: 0;
   }
 
   .blog-content .blog-mermaid__placeholder {
@@ -230,8 +233,17 @@
     min-height: 180px;
   }
 
+  .blog-content .blog-mermaid__svg-wrap {
+    @apply flex w-full justify-center overflow-x-auto;
+    background: transparent;
+  }
+
   .blog-content .blog-mermaid svg {
-    @apply max-w-full h-auto;
+    display: block;
+    width: min(100%, 680px);
+    max-width: 100%;
+    height: auto;
+    background: transparent !important;
   }
 
   /* Copy code button */
