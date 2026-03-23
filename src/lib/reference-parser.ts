@@ -21,6 +21,14 @@ const FOOTNOTE_INLINE_REGEX = /\[\^([^\]]+)\]/g;
 const OPENAI_CITE_REGEX = /cite([^]+)/g;
 const OPENAI_ENTITY_REGEX = /entity(.*?)/g;
 const REFERENCES_HEADING_REGEX = /^\s{0,3}(?:#{1,6}\s*)?(?:মূল রেফারেন্স(?:\s*\(.*?\))?|রেফারেন্স|references)\s*$/i;
+const KNOWN_OPENAI_REFERENCE_LABELS: Record<string, string> = {
+  turn12view0: 'IPCC. AR6 WGII Chapter 10: Asia (relative sea-level rise and coastal flood risk context).',
+  turn38view1: 'World Health Organization. Bangladesh Health National Adaptation Plan (HNAP): projected flood change map for 2080.',
+  turn40view0: 'Bangladesh climate profile synthesis (observed temperature, rainfall, and projection summary).',
+  turn41view0: 'Bangladesh national climate time-series availability review (open machine-readable data gap).',
+  turn54view0: 'World Bank. An Unsustainable Life: The Impact of Heat on Health and the Economy of Bangladesh (2025).',
+  turn55view0: 'Internal Displacement Monitoring Centre. Disaster displacement risk in Bangladesh (2026), cyclonic-wind AAD estimate.',
+};
 
 function stripHtmlTags(value: string): string {
   return value
@@ -140,7 +148,7 @@ function truncateLabel(value: string, maxLength = 180): string {
 }
 
 function fallbackReferenceContent(id: string, contextDefinitions: Map<string, string>): string {
-  return contextDefinitions.get(id) || `Cited source (${id})`;
+  return KNOWN_OPENAI_REFERENCE_LABELS[id] || contextDefinitions.get(id) || `Cited source (${id})`;
 }
 
 function splitCitationIds(rawIds: string): string[] {

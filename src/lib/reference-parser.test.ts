@@ -39,7 +39,7 @@ describe('parseReferences', () => {
     ]);
   });
 
-  it('falls back to citation context when the export omits a source definition', () => {
+  it('uses a known source label override when the export omits a source definition', () => {
     const content = [
       'বাংলাদেশে দীর্ঘমেয়াদি পর্যবেক্ষণে উষ্ণতা বৃদ্ধির সংকেত স্পষ্ট। citeturn40view0',
       '',
@@ -53,6 +53,20 @@ describe('parseReferences', () => {
     expect(parsed.references).toEqual([
       {
         id: 'turn40view0',
+        index: 1,
+        content: 'Bangladesh climate profile synthesis (observed temperature, rainfall, and projection summary).',
+      },
+    ]);
+  });
+
+  it('falls back to citation context when no explicit definition or manual override exists', () => {
+    const content = 'বাংলাদেশে দীর্ঘমেয়াদি পর্যবেক্ষণে উষ্ণতা বৃদ্ধির সংকেত স্পষ্ট। citeturn999view0';
+
+    const parsed = parseReferences(content);
+
+    expect(parsed.references).toEqual([
+      {
+        id: 'turn999view0',
         index: 1,
         content: 'বাংলাদেশে দীর্ঘমেয়াদি পর্যবেক্ষণে উষ্ণতা বৃদ্ধির সংকেত স্পষ্ট।',
       },
