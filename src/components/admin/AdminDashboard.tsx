@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   Settings,
   ChevronRight,
+  Tag,
   User,
   Inbox,
   Archive,
@@ -29,8 +30,6 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  Reply,
-  MoreHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -58,18 +57,9 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface Blog {
-  id: string;
-  slug: string;
-  headline: string;
-  excerpt: string;
-  tag: string;
-  writer: string;
-  status: 'draft' | 'published' | 'archived';
-  published_at: string;
-  created_at: string;
-}
+import { CategoryManagementSection, type CategoryEditorValues } from '@/components/admin/CategoryManagementSection';
+import { matchesAdminBlogSearch, slugifyCategoryName } from '@/lib/blog-categories';
+import type { BlogCategory, BlogRecord } from '@/types/blog';
 
 interface ContactSubmission {
   id: number;
@@ -100,16 +90,23 @@ interface Contract {
   notes?: string;
 }
 
+const BLOG_SELECT =
+  'id, slug, headline, excerpt, tag, tags, writer, status, published_at, created_at, category_id, category:categories(id, name, slug, description, is_active, created_at, updated_at)';
+
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'blogs' | 'contacts' | 'contracts'>('dashboard');
-  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [activeSection, setActiveSection] = useState<
+    'dashboard' | 'blogs' | 'categories' | 'contacts' | 'contracts'
+  >('dashboard');
+  const [blogs, setBlogs] = useState<BlogRecord[]>([]);
+  const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
   const [contractNotes, setContractNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<{ email?: string } | null>(null);
 
@@ -121,10 +118,15 @@ export function AdminDashboard() {
 
     checkAuth();
     loadBlogs();
+    loadCategories();
     loadContacts();
     loadContracts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [activeSection]);
 
   const checkAuth = async () => {
     if (!hasSupabaseConfig) {
@@ -144,7 +146,7 @@ export function AdminDashboard() {
     try {
       const { data, error } = await supabase
         .from('blogs')
-        .select('*')
+        .select(BLOG_SELECT)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -154,6 +156,21 @@ export function AdminDashboard() {
       toast.error('Failed to load blogs');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      toast.error('Failed to load categories');
     }
   };
 
@@ -332,11 +349,116 @@ export function AdminDashboard() {
     }
   };
 
-  const filteredBlogs = blogs.filter(blog =>
-    blog.headline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    blog.writer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    blog.tag?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSaveCategory = async (
+    categoryId: string | null,
+    values: CategoryEditorValues,
+  ) => {
+    const name = values.name.trim();
+    const slug = slugifyCategoryName(values.slug || values.name);
+
+    if (!name) {
+      toast.error('Category name is required');
+      throw new Error('Category name is required');
+    }
+
+    if (!slug) {
+      toast.error('Category slug is required');
+      throw new Error('Category slug is required');
+    }
+
+    setIsSavingCategory(true);
+
+    try {
+      const payload = {
+        name,
+        slug,
+        description: values.description.trim() || null,
+        is_active: values.is_active,
+      };
+
+      if (categoryId) {
+        const { error } = await supabase
+          .from('categories')
+          .update(payload)
+          .eq('id', categoryId);
+
+        if (error) throw error;
+        toast.success('Category updated');
+      } else {
+        const { error } = await supabase.from('categories').insert([payload]);
+
+        if (error) throw error;
+        toast.success('Category created');
+      }
+
+      await Promise.all([loadCategories(), loadBlogs()]);
+    } catch (error) {
+      console.error('Error saving category:', error);
+      const detail = error instanceof Error ? error.message : '';
+      toast.error(
+        detail.includes('duplicate') || detail.includes('unique')
+          ? 'Category slug already exists'
+          : 'Failed to save category',
+      );
+      throw error;
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  const handleToggleCategoryActive = async (category: BlogCategory) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({ is_active: !category.is_active })
+        .eq('id', category.id);
+
+      if (error) throw error;
+      toast.success(category.is_active ? 'Category hidden' : 'Category activated');
+      await Promise.all([loadCategories(), loadBlogs()]);
+    } catch (error) {
+      console.error('Error toggling category:', error);
+      toast.error('Failed to update category visibility');
+    }
+  };
+
+  const handleDeleteCategory = async (category: BlogCategory) => {
+    if (!confirm(`Delete category "${category.name}"?`)) return;
+
+    try {
+      const { count, error: countError } = await supabase
+        .from('blogs')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', category.id);
+
+      if (countError) throw countError;
+
+      if ((count || 0) > 0) {
+        toast.error('Reassign linked blog posts before deleting this category');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', category.id);
+
+      if (error) throw error;
+      toast.success('Category deleted');
+      await Promise.all([loadCategories(), loadBlogs()]);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Failed to delete category');
+    }
+  };
+
+  const filteredBlogs = blogs.filter((blog) => matchesAdminBlogSearch(blog, searchQuery));
+
+  const linkedBlogCountByCategory = blogs.reduce<Record<string, number>>((counts, blog) => {
+    if (!blog.category_id) return counts;
+    counts[blog.category_id] = (counts[blog.category_id] || 0) + 1;
+    return counts;
+  }, {});
 
   const filteredContacts = contacts.filter(contact =>
     contact.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -349,6 +471,11 @@ export function AdminDashboard() {
     total: blogs.length,
     published: blogs.filter(b => b.status === 'published').length,
     drafts: blogs.filter(b => b.status === 'draft').length,
+  };
+
+  const categoryStats = {
+    total: categories.length,
+    active: categories.filter((category) => category.is_active).length,
   };
 
   const contactStats = {
@@ -429,6 +556,17 @@ export function AdminDashboard() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  isActive={activeSection === 'categories'}
+                  onClick={() => setActiveSection('categories')}
+                  tooltip="Categories"
+                >
+                  <Tag className="h-4 w-4" />
+                  <span>Categories</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
                   isActive={activeSection === 'contacts'}
                   onClick={() => setActiveSection('contacts')}
                   tooltip="Contacts"
@@ -499,6 +637,7 @@ export function AdminDashboard() {
               <h1 className="text-lg font-semibold">
                 {activeSection === 'dashboard' && 'Dashboard'}
                 {activeSection === 'blogs' && 'Blog Management'}
+                {activeSection === 'categories' && 'Category Management'}
                 {activeSection === 'contacts' && 'Contact Submissions'}
                 {activeSection === 'contracts' && 'Contracts Inbox'}
               </h1>
@@ -594,7 +733,7 @@ export function AdminDashboard() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveSection('blogs')}>
                     <CardHeader>
                       <div className="flex items-center gap-3">
@@ -604,6 +743,23 @@ export function AdminDashboard() {
                         <div>
                           <CardTitle className="text-base">Manage Blogs</CardTitle>
                           <CardDescription>Create, edit and publish articles</CardDescription>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto" />
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveSection('categories')}>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Tag className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base">Manage Categories</CardTitle>
+                          <CardDescription>
+                            {categoryStats.active} active of {categoryStats.total} total categories
+                          </CardDescription>
                         </div>
                         <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto" />
                       </div>
@@ -670,9 +826,14 @@ export function AdminDashboard() {
                                 <div>
                                   <p className="font-medium">{blog.headline}</p>
                                   <p className="text-sm text-muted-foreground">/{blog.slug}</p>
-                                  {blog.tag && (
-                                    <Badge variant="secondary" className="mt-1">{blog.tag}</Badge>
-                                  )}
+                                  <div className="mt-1 flex flex-wrap gap-2">
+                                    {blog.category?.name && (
+                                      <Badge>{blog.category.name}</Badge>
+                                    )}
+                                    {blog.tag && (
+                                      <Badge variant="secondary">{blog.tag}</Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </td>
                               <td className="p-4">
@@ -735,6 +896,19 @@ export function AdminDashboard() {
                   </div>
                 </Card>
               </div>
+            )}
+
+            {activeSection === 'categories' && (
+              <CategoryManagementSection
+                categories={categories}
+                searchQuery={searchQuery}
+                isSaving={isSavingCategory}
+                linkedBlogCountByCategory={linkedBlogCountByCategory}
+                onDeleteCategory={handleDeleteCategory}
+                onSaveCategory={handleSaveCategory}
+                onSearchQueryChange={setSearchQuery}
+                onToggleCategoryActive={handleToggleCategoryActive}
+              />
             )}
 
             {activeSection === 'contacts' && (

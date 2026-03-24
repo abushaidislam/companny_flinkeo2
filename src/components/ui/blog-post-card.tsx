@@ -3,21 +3,21 @@
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
-  CardHeader,
   CardContent,
   CardFooter,
+  CardHeader,
 } from "@/components/ui/card";
+import { formatPostDate, formatReadTime } from "@/lib/blog-utils";
 import { cn } from "@/lib/utils";
-import { formatReadTime, formatPostDate } from "@/lib/blog-utils";
-
 
 export interface ArticleCardProps {
   headline: string;
   excerpt: string;
   cover?: string;
+  category?: string;
   tag?: string;
   tags?: string[];
-  readingTime?: number; // in minutes
+  readingTime?: number;
   writer?: string;
   publishedAt?: Date;
   clampLines?: number;
@@ -25,6 +25,7 @@ export interface ArticleCardProps {
 
 export const ArticleCard: React.FC<ArticleCardProps> = ({
   cover,
+  category,
   tag,
   tags,
   readingTime,
@@ -34,11 +35,11 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   publishedAt,
   clampLines,
 }) => {
-  const hasMeta = tag || tags?.length || readingTime;
+  const hasMeta = category || tag || tags?.length || readingTime;
   const hasFooter = writer || publishedAt;
 
   return (
-    <Card className="flex w-full flex-col gap-3 overflow-hidden rounded-3xl border p-3 shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="flex w-full flex-col gap-3 overflow-hidden rounded-3xl border p-3 shadow-lg transition-shadow duration-300 hover:shadow-xl">
       {cover && (
         <CardHeader className="p-0">
           <div className="relative h-56 w-full">
@@ -54,17 +55,18 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
       <CardContent className="flex-grow p-3">
         {hasMeta && (
           <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            {tags?.map((t) => (
-              <Badge key={t} variant="outline" className="text-xs">
-                #{t}
+            {category && <Badge className="rounded-full px-3 py-1 text-sm">{category}</Badge>}
+            {tags?.map((item) => (
+              <Badge key={item} variant="outline" className="text-xs">
+                #{item}
               </Badge>
             ))}
             {tag && !tags?.includes(tag) && (
-              <Badge className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:text-black hover:bg-muted/80">
+              <Badge className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:bg-muted/80 hover:text-black">
                 {tag}
               </Badge>
             )}
-            {(tag || tags?.length) && readingTime && <span className="mx-1">•</span>}
+            {(category || tag || tags?.length) && readingTime && <span className="mx-1">|</span>}
             {readingTime && <span>{formatReadTime(readingTime)}</span>}
           </div>
         )}

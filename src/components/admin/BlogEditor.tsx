@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
 import { ArrowLeft, Save, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
+import type { BlogCategory } from '@/types/blog';
 
 function TagInput({
   tags,
@@ -75,6 +76,7 @@ export function AdminBlogEditor() {
     excerpt: '',
     content: '',
     cover_image: '',
+    category_id: '',
     tag: '',
     tags: [] as string[],
     writer: '',
@@ -87,6 +89,7 @@ export function AdminBlogEditor() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isReadingTimeAuto, setIsReadingTimeAuto] = useState(true);
+  const [categories, setCategories] = useState<BlogCategory[]>([]);
 
   const isMountedRef = useRef(true);
 
@@ -95,6 +98,25 @@ export function AdminBlogEditor() {
       isMountedRef.current = false;
     };
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      if (isMountedRef.current) {
+        setCategories(data || []);
+      }
+    } catch (error) {
+      if (isMountedRef.current) {
+        console.error('Error loading categories:', error);
+        toast.error('Failed to load categories');
+      }
+    }
+  };
 
   const loadBlog = async () => {
     setIsLoading(true);
@@ -114,6 +136,7 @@ export function AdminBlogEditor() {
           excerpt: data.excerpt || '',
           content: data.content,
           cover_image: data.cover_image || '',
+          category_id: data.category_id || '',
           tag: data.tag || '',
           tags: data.tags || [],
           writer: data.writer,
@@ -137,6 +160,7 @@ export function AdminBlogEditor() {
   };
 
   useEffect(() => {
+    loadCategories();
     if (!isEditMode) return;
     loadBlog();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -220,6 +244,7 @@ export function AdminBlogEditor() {
         ...formData,
         headline,
         slug,
+        category_id: formData.category_id || null,
         status: publish ? 'published' : 'draft',
         published_at: publish ? new Date().toISOString() : null,
       };
@@ -339,7 +364,24 @@ export function AdminBlogEditor() {
           </div>
 
           {/* Meta Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="category_id">Primary Category</Label>
+              <select
+                id="category_id"
+                value={formData.category_id}
+                onChange={(e) => setFormData((prev) => ({ ...prev, category_id: e.target.value }))}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Uncategorized</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                    {category.is_active ? '' : ' (Hidden)'}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="tag">Tag</Label>
               <Input

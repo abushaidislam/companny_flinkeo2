@@ -45,6 +45,34 @@ CREATE POLICY "Allow authenticated users to update contact submissions"
   TO authenticated 
   USING (true);
 
+-- Create categories table for blog discovery and admin management
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_categories_active ON categories(is_active);
+
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can view active categories" ON categories;
+CREATE POLICY "Public can view active categories"
+  ON categories FOR SELECT
+  USING (is_active = true);
+
+DROP POLICY IF EXISTS "Authenticated users can manage categories" ON categories;
+CREATE POLICY "Authenticated users can manage categories"
+  ON categories FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
 -- Create blogs table
 CREATE TABLE IF NOT EXISTS blogs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -64,10 +92,14 @@ CREATE TABLE IF NOT EXISTS blogs (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+ALTER TABLE blogs
+  ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES categories(id) ON DELETE SET NULL;
+
 -- Create indexes for blogs
 CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);
 CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status);
 CREATE INDEX IF NOT EXISTS idx_blogs_published_at ON blogs(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blogs_category_id ON blogs(category_id);
 
 -- Enable RLS on blogs
 ALTER TABLE blogs ENABLE ROW LEVEL SECURITY;

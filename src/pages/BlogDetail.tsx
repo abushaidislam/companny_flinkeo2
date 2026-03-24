@@ -13,23 +13,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DOMPurify from 'dompurify';
 import { ArticleCard } from '@/components/ui/blog-post-card';
+import { getCategoryDisplayName } from '@/lib/blog-categories';
 import { detectContentType, markdownToHtml, normalizeBlogDetailContent } from '@/lib/content-utils';
 import { HybridContent } from '@/components/HybridContent';
+import type { BlogRecord } from '@/types/blog';
 
-interface Blog {
-  id: string;
-  slug: string;
-  headline: string;
-  excerpt: string;
-  content: string;
-  cover_image: string;
-  tag: string;
-  tags: string[];
-  reading_time: number;
-  writer: string;
-  writer_avatar: string;
-  published_at: string;
-}
+type Blog = BlogRecord & { content: string };
+
+const BLOG_DETAIL_SELECT =
+  'id, slug, headline, excerpt, content, cover_image, tag, tags, reading_time, writer, writer_avatar, published_at, category_id, category:categories(id, name, slug, description, is_active, created_at, updated_at)';
 
 interface TocHeading {
   id: string;
@@ -80,7 +72,7 @@ export default function BlogDetail() {
     try {
       const { data, error } = await supabase
         .from('blogs')
-        .select('*')
+        .select(BLOG_DETAIL_SELECT)
         .eq('slug', slug)
         .eq('status', 'published')
         .single();
@@ -268,22 +260,37 @@ export default function BlogDetail() {
 
     const loadRelated = async () => {
       try {
-        let query = supabase
+        const sameCategoryQuery = blog.category_id
+          ? await supabase
+              .from('blogs')
+              .select(BLOG_DETAIL_SELECT)
+              .eq('status', 'published')
+              .eq('category_id', blog.category_id)
+              .neq('slug', blog.slug)
+              .order('published_at', { ascending: false })
+              .limit(3)
+          : { data: [], error: null };
+
+        if (sameCategoryQuery.error) throw sameCategoryQuery.error;
+
+        const fallbackQuery = await supabase
           .from('blogs')
-          .select('*')
+          .select(BLOG_DETAIL_SELECT)
           .eq('status', 'published')
           .neq('slug', blog.slug)
           .order('published_at', { ascending: false })
-          .limit(3);
+          .limit(6);
 
-        if (blog.tag) {
-          query = query.eq('tag', blog.tag);
-        }
+        if (fallbackQuery.error) throw fallbackQuery.error;
 
-        const { data, error } = await query;
-        if (error) throw error;
+        const merged = [...(sameCategoryQuery.data || []), ...(fallbackQuery.data || [])];
+        const deduped = merged.filter(
+          (candidate, index, items) =>
+            items.findIndex((item) => item.id === candidate.id) === index,
+        );
+
         if (isMountedRef.current) {
-          setRelatedBlogs(data || []);
+          setRelatedBlogs(deduped.slice(0, 3));
         }
       } catch (err) {
         if (isMountedRef.current) {
@@ -347,6 +354,10 @@ export default function BlogDetail() {
     );
   }
 
+  const relatedSectionTitle = blog.category?.name
+    ? `More in ${blog.category.name}`
+    : 'Related articles';
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -400,8 +411,13 @@ export default function BlogDetail() {
               className="mb-8"
             >
               {/* Tags */}
-              {(blog.tags?.length > 0 || blog.tag) && (
+              {(blog.category || blog.tags?.length > 0 || blog.tag) && (
                 <div className="flex flex-wrap gap-2 mb-4">
+                  {blog.category && (
+                    <Link to={`/blog?category=${blog.category.slug}`}>
+                      <Badge>{blog.category.name}</Badge>
+                    </Link>
+                  )}
                   {blog.tags?.map((tag) => (
                     <Badge key={tag} variant="outline">
                       #{tag}
@@ -482,7 +498,7 @@ export default function BlogDetail() {
             {/* Related articles */}
             {relatedBlogs.length > 0 && (
               <section className="mt-12">
-                <h2 className="text-xl font-semibold mb-4">Related articles</h2>
+                <h2 className="text-xl font-semibold mb-4">{relatedSectionTitle}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {relatedBlogs.map((r) => (
                     <Link key={r.id} to={`/blog/${r.slug}`}>
@@ -490,6 +506,7 @@ export default function BlogDetail() {
                         headline={r.headline}
                         excerpt={r.excerpt}
                         cover={r.cover_image}
+                        category={getCategoryDisplayName(r.category, r.tag)}
                         tag={r.tag}
                         tags={r.tags}
                         readingTime={r.reading_time}
