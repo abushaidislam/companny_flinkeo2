@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import {
+  getSupabaseUnavailableMessage,
+  hasSupabaseConfig,
+  supabase,
+} from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +21,12 @@ export function AdminLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!hasSupabaseConfig) {
+      toast.error(getSupabaseUnavailableMessage('Admin login'));
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -46,7 +56,9 @@ export function AdminLogin() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            Sign in to manage blog posts
+            {hasSupabaseConfig
+              ? 'Sign in to manage blog posts'
+              : getSupabaseUnavailableMessage('Admin login')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,6 +72,7 @@ export function AdminLogin() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@example.com"
                 required
+                disabled={!hasSupabaseConfig}
               />
             </div>
             <div className="space-y-2">
@@ -72,6 +85,7 @@ export function AdminLogin() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
+                  disabled={!hasSupabaseConfig}
                 />
                 <Button
                   type="button"
@@ -79,6 +93,7 @@ export function AdminLogin() {
                   size="sm"
                   className="absolute right-2 top-1/2 -translate-y-1/2"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={!hasSupabaseConfig}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -87,9 +102,9 @@ export function AdminLogin() {
             <Button 
               type="submit" 
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || !hasSupabaseConfig}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing in...' : hasSupabaseConfig ? 'Sign In' : 'Unavailable'}
             </Button>
           </form>
         </CardContent>

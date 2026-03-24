@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
+    "lint": "eslint src eslint.config.js vite.config.ts vitest.config.ts tailwind.config.ts playwright.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

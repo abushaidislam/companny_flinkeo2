@@ -9,10 +9,9 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import type { ReactNode } from 'react';
 import * as React from 'react';
-import mermaid from 'mermaid';
-import Chart from 'chart.js/auto';
 import type { ChartData, ChartType } from 'chart.js';
 import { References } from '@/components/References';
+import { loadChartJs, loadMermaid } from '@/lib/blog-visuals';
 import { hasReferences, parseReferences } from '@/lib/reference-parser';
 import { containsBengaliText } from '@/lib/content-utils';
 
@@ -23,9 +22,7 @@ type MarkdownNode = {
 };
 
 const BLOG_VISUAL_FONT_STACK = "'Anek Bangla', 'Noto Sans Bengali', 'Plus Jakarta Sans', 'Inter', sans-serif";
-if (Chart.defaults?.font) {
-  Chart.defaults.font.family = BLOG_VISUAL_FONT_STACK;
-}
+type MermaidApi = Awaited<ReturnType<typeof loadMermaid>>;
 
 function extractTextContent(node: ReactNode, separator = ''): string {
   if (typeof node === 'string' || typeof node === 'number') {
@@ -106,7 +103,7 @@ function buildMermaidRecoveryCandidates(raw: string): string[] {
   return Array.from(new Set(candidates));
 }
 
-async function renderMermaidWithRecovery(id: string, raw: string) {
+async function renderMermaidWithRecovery(mermaid: MermaidApi, id: string, raw: string) {
   const candidates = buildMermaidRecoveryCandidates(raw);
   let lastError: unknown;
 
@@ -176,25 +173,41 @@ function ChartBlock({ raw }: { raw: string }) {
     const canvas = canvasRef.current;
     if (!canvas || !spec) return;
 
-    const chart = new Chart(canvas, {
-      type: (spec.type as ChartType) || 'line',
-      data: spec.data as ChartData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 900, easing: 'easeOutQuart' },
-        locale: isBangla ? 'bn-BD' : 'en-US',
-        plugins: {
-          legend: { display: (spec.options?.legend as boolean) !== false },
-          title: { display: false },
-          tooltip: { enabled: true },
-        },
-        ...(spec.options || {}),
-      },
-    });
+    let cancelled = false;
+    let chart: { destroy: () => void } | null = null;
+
+    void loadChartJs()
+      .then((ChartJs) => {
+        if (cancelled) return;
+
+        if (ChartJs.defaults?.font) {
+          ChartJs.defaults.font.family = BLOG_VISUAL_FONT_STACK;
+        }
+
+        chart = new ChartJs(canvas, {
+          type: (spec.type as ChartType) || 'line',
+          data: spec.data as ChartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            locale: isBangla ? 'bn-BD' : 'en-US',
+            plugins: {
+              legend: { display: (spec.options?.legend as boolean) !== false },
+              title: { display: false },
+              tooltip: { enabled: true },
+            },
+            ...(spec.options || {}),
+          },
+        });
+      })
+      .catch((error) => {
+        console.error('Chart render error:', error);
+      });
 
     return () => {
-      chart.destroy();
+      cancelled = true;
+      chart?.destroy();
     };
   }, [spec, isBangla]);
 
@@ -232,31 +245,34 @@ function MermaidBlock({ raw }: { raw: string }) {
     let cancelled = false;
     const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
 
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-      securityLevel: 'loose',
-      themeVariables: {
-        fontFamily: BLOG_VISUAL_FONT_STACK,
-      },
-      themeCSS: `
-        #${id},
-        #${id} text,
-        #${id} tspan,
-        #${id} foreignObject,
-        #${id} foreignObject div,
-        #${id} span,
-        #${id} p {
-          font-family: ${BLOG_VISUAL_FONT_STACK};
-          letter-spacing: normal;
-          word-break: break-word;
-        }
-      `,
-    });
+    void loadMermaid()
+      .then((mermaid) => {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+          securityLevel: 'loose',
+          themeVariables: {
+            fontFamily: BLOG_VISUAL_FONT_STACK,
+          },
+          themeCSS: `
+            #${id},
+            #${id} text,
+            #${id} tspan,
+            #${id} foreignObject,
+            #${id} foreignObject div,
+            #${id} span,
+            #${id} p {
+              font-family: ${BLOG_VISUAL_FONT_STACK};
+              letter-spacing: normal;
+              word-break: break-word;
+            }
+          `,
+        });
 
-    renderMermaidWithRecovery(id, raw)
+        return renderMermaidWithRecovery(mermaid, id, raw);
+      })
       .then(({ svg: renderedSvg }) => {
-        if (cancelled) return;
+        if (cancelled || !renderedSvg) return;
         setSvg(renderedSvg);
         setFailed(false);
       })

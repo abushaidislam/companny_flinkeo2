@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import {
+  getSupabaseUnavailableMessage,
+  hasSupabaseConfig,
+  supabase,
+} from '@/lib/supabase';
 import Navbar from '@/components/landing/Navbar';
 import { Footer } from '@/components/ui/footer-section';
 import { ArticleCard } from '@/components/ui/blog-post-card';
@@ -24,8 +28,15 @@ interface Blog {
 export default function BlogList() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) {
+      setError(getSupabaseUnavailableMessage('Blog'));
+      setIsLoading(false);
+      return;
+    }
+
     loadBlogs();
   }, []);
 
@@ -41,6 +52,7 @@ export default function BlogList() {
       setBlogs(data || []);
     } catch (error) {
       console.error('Error loading blogs:', error);
+      setError('We could not load blog posts right now.');
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +87,13 @@ export default function BlogList() {
           {isLoading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <h2 className="mb-2 text-2xl font-bold leading-tight text-card-foreground font-bangla">
+                Blog unavailable
+              </h2>
+              <p className="text-muted-foreground font-bangla">{error}</p>
             </div>
           ) : blogs.length === 0 ? (
             <div className="text-center py-16">

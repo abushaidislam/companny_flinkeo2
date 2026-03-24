@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import {
+  getSupabaseUnavailableMessage,
+  hasSupabaseConfig,
+  supabase,
+} from '@/lib/supabase';
 import Navbar from '@/components/landing/Navbar';
 import { Footer } from '@/components/ui/footer-section';
 import { motion } from 'framer-motion';
@@ -58,6 +62,12 @@ export default function BlogDetail() {
   }, []);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) {
+      setError(getSupabaseUnavailableMessage('Blog'));
+      setIsLoading(false);
+      return;
+    }
+
     if (slug) {
       loadBlog();
     }
@@ -254,6 +264,8 @@ export default function BlogDetail() {
   // Load related blogs with cleanup protection
   useEffect(() => {
     if (!blog) return;
+    if (!hasSupabaseConfig) return;
+
     const loadRelated = async () => {
       try {
         let query = supabase

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseUnavailableMessage, hasSupabaseConfig, supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -11,8 +11,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) {
+      setIsAuthenticated(false);
+      return;
+    }
+
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     };
 
@@ -24,6 +31,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  if (!hasSupabaseConfig) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="max-w-md rounded-3xl border border-border/70 bg-card p-8 text-center shadow-sm">
+          <h1 className="text-xl font-semibold text-foreground">Admin unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {getSupabaseUnavailableMessage('Admin access')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isAuthenticated === null) {
     return (

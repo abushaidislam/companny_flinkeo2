@@ -17,7 +17,11 @@ import {
   getIntentCopy,
   mapServiceToContactSelections,
 } from '@/data/company-contact';
-import { submitContactForm } from '@/lib/supabase';
+import {
+  getSupabaseUnavailableMessage,
+  hasSupabaseConfig,
+  submitContactForm,
+} from '@/lib/supabase';
 
 interface ContactFormData {
   firstName: string;
@@ -110,6 +114,15 @@ const ContactPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!hasSupabaseConfig) {
+      toast({
+        title: 'Contact form unavailable',
+        description: getSupabaseUnavailableMessage('Contact form'),
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (!validateForm()) {
       toast({
@@ -372,7 +385,7 @@ const ContactPage = () => {
                       variant="hero"
                       size="lg"
                       className="w-full sm:w-auto"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !hasSupabaseConfig}
                     >
                       {isSubmitting ? (
                         <>
@@ -380,7 +393,7 @@ const ContactPage = () => {
                           Sending...
                         </>
                       ) : (
-                        intentCopy.buttonLabel
+                        hasSupabaseConfig ? intentCopy.buttonLabel : 'Form unavailable'
                       )}
                     </Button>
                   </div>

@@ -29,7 +29,11 @@ import {
   getIntentCopy,
   mapServiceToLandingProjectType,
 } from '@/data/company-contact';
-import { submitContactForm } from '@/lib/supabase';
+import {
+  getSupabaseUnavailableMessage,
+  hasSupabaseConfig,
+  submitContactForm,
+} from '@/lib/supabase';
 
 interface ContactFormData {
   name: string;
@@ -113,6 +117,13 @@ const ContactForm = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (!hasSupabaseConfig) {
+      toast.error('Contact form unavailable', {
+        description: getSupabaseUnavailableMessage('Contact form'),
+      });
+      return;
+    }
 
     if (!validateForm()) {
       toast.error('Please fix the errors', {
@@ -362,8 +373,9 @@ const ContactForm = () => {
 
                 <div className="flex flex-col gap-4 border-t border-border/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
                   <p className="max-w-sm text-sm leading-6 text-text-secondary">
-                    Free consultation. No commitment required. Share enough context and we
-                    will respond with a concrete recommendation.
+                    {hasSupabaseConfig
+                      ? 'Free consultation. No commitment required. Share enough context and we will respond with a concrete recommendation.'
+                      : 'Form submissions are unavailable in this environment. Use email or WhatsApp while Supabase is not configured.'}
                   </p>
 
                   <Button
@@ -371,7 +383,7 @@ const ContactForm = () => {
                     variant="hero"
                     size="lg"
                     className="w-full sm:min-w-[15rem] sm:w-auto"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !hasSupabaseConfig}
                   >
                     {isSubmitting ? (
                       <>
@@ -380,7 +392,7 @@ const ContactForm = () => {
                       </>
                     ) : (
                       <>
-                        {intentCopy.buttonLabel}
+                        {hasSupabaseConfig ? intentCopy.buttonLabel : 'Form unavailable'}
                         <Send className="ml-2 h-5 w-5" />
                       </>
                     )}

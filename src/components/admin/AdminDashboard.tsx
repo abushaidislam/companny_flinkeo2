@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import {
+  getSupabaseUnavailableMessage,
+  hasSupabaseConfig,
+  supabase,
+} from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -110,6 +114,11 @@ export function AdminDashboard() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) {
+      setIsLoading(false);
+      return;
+    }
+
     checkAuth();
     loadBlogs();
     loadContacts();
@@ -118,6 +127,11 @@ export function AdminDashboard() {
   }, []);
 
   const checkAuth = async () => {
+    if (!hasSupabaseConfig) {
+      navigate('/admin/login');
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate('/admin/login');
@@ -254,6 +268,11 @@ export function AdminDashboard() {
   };
 
   const handleLogout = async () => {
+    if (!hasSupabaseConfig) {
+      navigate('/admin/login');
+      return;
+    }
+
     await supabase.auth.signOut();
     navigate('/admin/login');
   };
@@ -345,6 +364,19 @@ export function AdminDashboard() {
       return new Date(c.created_at) >= weekAgo;
     }).length,
   };
+
+  if (!hasSupabaseConfig) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="max-w-md rounded-3xl border border-border/70 bg-card p-8 text-center shadow-sm">
+          <h1 className="text-xl font-semibold text-foreground">Admin unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {getSupabaseUnavailableMessage('Admin dashboard')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
