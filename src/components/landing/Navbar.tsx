@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/navigation-menu';
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { primaryConsultationLabel } from '@/data/landing-content';
+import { bookingConsultationHref } from '@/data/company-contact';
 
 type LinkItem = {
   title: string;
@@ -278,7 +279,7 @@ const Navbar = () => {
             <Link to="/#work">Our Work</Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <Link to="/#contact">{primaryConsultationLabel}</Link>
+            <Link to={bookingConsultationHref}>{primaryConsultationLabel}</Link>
           </Button>
         </div>
 
@@ -365,7 +366,7 @@ const Navbar = () => {
             </Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <Link to="/#contact" onClick={() => setOpen(false)}>
+            <Link to={bookingConsultationHref} onClick={() => setOpen(false)}>
               {primaryConsultationLabel}
             </Link>
           </Button>

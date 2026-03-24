@@ -21,7 +21,7 @@ const FAQSection = () => {
             title={faqSection.copy.title}
             description={faqSection.copy.description}
             action={
-              <Button variant="hero" size="lg" asChild>
+              <Button variant="hero" size="lg" className="w-full sm:w-auto" asChild>
                 <a href="#contact">{primaryConsultationLabel}</a>
               </Button>
             }

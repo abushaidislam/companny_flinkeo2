@@ -9,10 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   CheckCircle2,
   ArrowRight,
+  CalendarDays,
   Palette,
   Code2,
   Rocket,
   LineChart,
+  MessageCircleMore,
   Smartphone,
   Globe,
   Zap,
@@ -21,6 +23,12 @@ import {
   Star,
   Sparkles
 } from 'lucide-react';
+import {
+  bookingConsultationHref,
+  buildContactHref,
+  buildWhatsAppHref,
+  companyContact,
+} from '@/data/company-contact';
 
 const services = [
   {
@@ -166,6 +174,24 @@ const processSteps = [
   }
 ];
 
+const engagementModels = [
+  {
+    title: 'Launch Sprint',
+    description: 'For teams that need a landing page, service page suite, or launch-ready site in a compressed window.',
+    fit: 'Best for time-sensitive launches and offer validation.',
+  },
+  {
+    title: 'Growth Website Build',
+    description: 'For businesses that need positioning, UI, development, and lead capture aligned into one delivery track.',
+    fit: 'Best for full website rebuilds and conversion cleanup.',
+  },
+  {
+    title: 'Ongoing Design Support',
+    description: 'For product, CRO, and marketing teams that need recurring design and implementation help after launch.',
+    fit: 'Best for monthly iteration and post-launch momentum.',
+  },
+];
+
 const faqs = [
   {
     question: 'How long does a typical project take?',
@@ -191,6 +217,9 @@ const faqs = [
 
 const Services = () => {
   const navigate = useNavigate();
+  const whatsAppHref = buildWhatsAppHref(
+    'Hi Flinke, I want to discuss which service fits my website or product project.',
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -214,13 +243,29 @@ const Services = () => {
               that help businesses thrive in the modern economy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate('/contact')}>
-                Start Your Project
-                <ArrowRight className="h-4 w-4 ml-2" />
+              <Button size="lg" asChild>
+                <a href={bookingConsultationHref}>
+                  Start Your Project
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </a>
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/portfolio')}>
+              <Button size="lg" variant="outline" onClick={() => navigate('/#work')}>
                 View Our Work
               </Button>
+            </div>
+            <div className="mt-4 flex flex-col items-center justify-center gap-3 text-sm text-muted-foreground sm:flex-row">
+              <a
+                href={whatsAppHref}
+                target="_blank"
+                rel="noreferrer"
+                className="transition-colors hover:text-foreground"
+              >
+                Continue on WhatsApp
+              </a>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <a href={companyContact.emailHref} className="transition-colors hover:text-foreground">
+                {companyContact.email}
+              </a>
             </div>
           </motion.div>
         </div>
@@ -243,7 +288,7 @@ const Services = () => {
               <p className="text-sm text-muted-foreground">Countries Served</p>
             </div>
             <div>
-              <p className="text-3xl font-display font-bold text-primary">4.9★</p>
+              <p className="text-3xl font-display font-bold text-primary">4.9/5</p>
               <p className="text-sm text-muted-foreground">Average Rating</p>
             </div>
           </div>
@@ -319,7 +364,15 @@ const Services = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => navigate('/contact')}
+                        onClick={() =>
+                          navigate(
+                            buildContactHref({
+                              intent: 'quote',
+                              service: service.id,
+                              source: 'services-grid',
+                            }),
+                          )
+                        }
                       >
                         Get Quote
                       </Button>
@@ -388,6 +441,52 @@ const Services = () => {
         </div>
       </section>
 
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center max-w-3xl mx-auto mb-16"
+          >
+            <h2 className="font-display font-semibold text-3xl mb-4">
+              Engagement Models
+            </h2>
+            <p className="text-muted-foreground">
+              Not every client needs the same delivery structure. These are the three
+              engagement types we scope most often.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {engagementModels.map((model, index) => (
+              <motion.div
+                key={model.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08 }}
+              >
+                <Card className="h-full">
+                  <CardContent className="p-6">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="mt-5 font-semibold text-xl">{model.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                      {model.description}
+                    </p>
+                    <p className="mt-4 border-t pt-4 text-sm font-medium text-foreground/85">
+                      {model.fit}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-24">
         <div className="container mx-auto px-4">
@@ -443,12 +542,17 @@ const Services = () => {
               Get a free consultation and project estimate.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate('/contact')}>
-                Schedule a Call
-                <ArrowRight className="h-4 w-4 ml-2" />
+              <Button size="lg" asChild>
+                <a href={bookingConsultationHref}>
+                  Schedule a Call
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </a>
               </Button>
-              <Button size="lg" variant="outline" onClick={() => window.open('mailto:hello@flinke.agency')}>
-                Email Us Directly
+              <Button size="lg" variant="outline" asChild>
+                <a href={whatsAppHref} target="_blank" rel="noreferrer">
+                  <MessageCircleMore className="h-4 w-4 mr-2" />
+                  WhatsApp Us
+                </a>
               </Button>
             </div>
           </motion.div>

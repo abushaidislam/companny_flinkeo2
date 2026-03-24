@@ -15,7 +15,7 @@ const PricingSection = () => {
           description={pricingSection.copy.description}
         />
 
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {pricingSection.plans.map((plan, index) => (
             <motion.div
               key={plan.name}
@@ -23,7 +23,7 @@ const PricingSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.15, duration: 0.5 }}
-              className={`glass-card relative p-8 transition-transform duration-300 hover:scale-[1.02] ${
+              className={`glass-card relative p-6 sm:p-8 transition-transform duration-300 hover:scale-[1.02] ${
                 plan.popular ? "border-foreground/20 premium-shadow" : ""
               }`}
             >

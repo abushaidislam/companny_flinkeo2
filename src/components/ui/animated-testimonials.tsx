@@ -49,10 +49,10 @@ export function AnimatedTestimonials({
   const randomRotateY = () => (shouldReduceMotion ? 0 : Math.floor(Math.random() * 21) - 10);
 
   return (
-    <div className={cn("mx-auto max-w-sm px-3 py-10 sm:px-4 md:max-w-5xl md:px-8 md:py-16 lg:px-12", className)}>
+    <div className={cn("mx-auto max-w-sm px-0 py-8 sm:px-4 sm:py-10 md:max-w-5xl md:px-8 md:py-16 lg:px-12", className)}>
       <div className="relative grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
         <div>
-          <div className="relative h-[18rem] w-full sm:h-80">
+          <div className="relative h-72 w-full overflow-hidden sm:h-80">
             <AnimatePresence>
               {testimonials.map((testimonial, index) => (
                 <motion.div
@@ -142,7 +142,7 @@ export function AnimatedTestimonials({
               ))}
             </motion.p>
           </motion.div>
-          <div className="flex gap-4 pt-12 md:pt-0">
+          <div className="flex gap-4 pt-8 md:pt-0">
             <button
               onClick={handlePrev}
               aria-label="Show previous testimonial"

@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { bookingConsultationHref, defaultWhatsAppHref } from "@/data/company-contact";
 import { heroContent } from "@/data/landing-content";
 
 const HeroSection = () => {
@@ -10,21 +12,21 @@ const HeroSection = () => {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden pb-14 pt-24 md:pb-20 md:pt-24"
+      className="relative overflow-hidden pb-10 pt-20 sm:pb-14 sm:pt-24 md:pb-20"
     >
       <div className="absolute inset-0">
-        <div className="absolute left-[-8rem] top-8 h-64 w-64 rounded-full bg-white/80 blur-[110px]" />
-        <div className="absolute right-[-8rem] top-20 h-80 w-80 rounded-full bg-foreground/[0.04] blur-[140px]" />
+        <div className="absolute left-[-8rem] top-8 hidden h-64 w-64 rounded-full bg-white/80 blur-[110px] sm:block" />
+        <div className="absolute right-[-8rem] top-20 hidden h-80 w-80 rounded-full bg-foreground/[0.04] blur-[140px] sm:block" />
         <div className="absolute bottom-0 left-1/2 h-px w-[min(92vw,78rem)] -translate-x-1/2 bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
       <div className="container relative z-10 mx-auto px-4">
-        <div className="section-shell relative overflow-hidden px-6 py-8 sm:px-8 md:px-10 md:py-10 lg:px-12 lg:py-12">
+        <div className="section-shell relative overflow-hidden px-4 py-6 sm:px-8 sm:py-8 md:px-10 md:py-10 lg:px-12 lg:py-12">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(0_0%_100%_/_0.92),transparent_38%),linear-gradient(135deg,hsl(36_40%_94%_/_0.7),transparent_58%)]" />
           <div className="absolute inset-y-0 right-0 hidden w-[41%] border-l border-border/60 bg-[linear-gradient(180deg,hsl(24_20%_9%),hsl(24_14%_14%))] lg:block" />
           <div className="absolute right-[15%] top-16 hidden h-40 w-40 rounded-full bg-white/10 blur-[90px] lg:block" />
 
-          <div className="relative grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_31rem] lg:gap-16">
+          <div className="relative grid items-center gap-8 sm:gap-12 lg:grid-cols-[minmax(0,1fr)_31rem] lg:gap-16">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -45,7 +47,7 @@ const HeroSection = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.8 }}
-                className="mt-6 text-4xl font-display font-extrabold leading-[0.96] tracking-[-0.04em] md:text-6xl lg:max-w-[12ch] lg:text-[4.6rem]"
+                className="mt-6 text-[2.75rem] font-display font-extrabold leading-[0.96] tracking-[-0.04em] sm:text-5xl md:text-6xl lg:max-w-[12ch] lg:text-[4.6rem]"
               >
                 {heroTitleLead} <span className="gradient-text">inquiries.</span>
               </motion.h1>
@@ -65,14 +67,37 @@ const HeroSection = () => {
                 transition={{ delay: 0.55, duration: 0.8 }}
                 className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4 lg:justify-start"
               >
-                <Button variant="hero" size="xl" asChild>
-                  <a href="#contact">
+                <Button variant="hero" size="xl" className="w-full sm:w-auto" asChild>
+                  <Link to={bookingConsultationHref}>
                     {heroContent.primaryCta} <ArrowRight className="ml-1 h-5 w-5" />
-                  </a>
+                  </Link>
                 </Button>
-                <Button variant="heroOutline" size="xl" asChild>
+                <Button variant="heroOutline" size="xl" className="w-full sm:w-auto" asChild>
                   <a href="#work">{heroContent.secondaryCta}</a>
                 </Button>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65, duration: 0.7 }}
+                className="mt-4 flex flex-col gap-3 text-sm text-text-secondary sm:flex-row sm:items-center"
+              >
+                <a
+                  href={defaultWhatsAppHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-colors hover:text-foreground"
+                >
+                  Chat on WhatsApp
+                </a>
+                <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+                <Link
+                  to="/services"
+                  className="transition-colors hover:text-foreground"
+                >
+                  Explore service details
+                </Link>
               </motion.div>
 
               <div className="mt-10 grid gap-4 border-t border-border/70 pt-6 sm:grid-cols-3">
@@ -91,10 +116,10 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.9 }}
-              className="relative w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,hsl(24_20%_9%),hsl(24_14%_14%))] p-6 text-white premium-shadow"
+              className="relative w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,hsl(24_20%_9%),hsl(24_14%_14%))] p-4 text-white premium-shadow sm:p-6"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(0_0%_100%_/_0.12),transparent_34%),radial-gradient(circle_at_bottom_left,hsl(34_55%_70%_/_0.12),transparent_28%)]" />
-              <div className="relative rounded-[1.35rem] border border-white/10 bg-white/[0.02] p-6 backdrop-blur-sm">
+              <div className="relative rounded-[1.35rem] border border-white/10 bg-white/[0.02] p-5 backdrop-blur-sm sm:p-6">
                 <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-5">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">
@@ -122,7 +147,7 @@ const HeroSection = () => {
                   ))}
                 </div>
 
-                <div className="mt-6 grid gap-4 border-t border-white/10 pt-6 sm:grid-cols-3">
+                <div className="mt-6 grid gap-5 border-t border-white/10 pt-6 sm:grid-cols-3">
                   {heroContent.visual.metrics.map((metric) => (
                     <div key={metric.label}>
                       <p className="text-[11px] uppercase tracking-[0.24em] text-white/48">

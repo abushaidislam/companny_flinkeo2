@@ -13,7 +13,7 @@ const HowItWorksSection = () => {
           description={processSection.copy.description}
         />
 
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {processSection.steps.map((step, index) => (
             <motion.div
               key={step.step}
@@ -21,7 +21,7 @@ const HowItWorksSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.2, duration: 0.6 }}
-              className="rounded-3xl border border-border bg-card px-6 py-8"
+              className="rounded-3xl border border-border bg-card px-5 py-6 sm:px-6 sm:py-8"
             >
               <div className="mb-6 flex items-center justify-between">
                 <span className="text-sm font-semibold uppercase tracking-[0.18em] text-text-secondary">

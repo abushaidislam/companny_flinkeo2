@@ -11,10 +11,12 @@ import BlogList from "./pages/BlogList.tsx";
 import BlogDetail from "./pages/BlogDetail.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import Services from "./pages/Services.tsx";
+import ThankYou from "./pages/ThankYou.tsx";
 import { AdminLogin } from "./pages/AdminLogin.tsx";
 import { AdminDashboard } from "./components/admin/AdminDashboard.tsx";
 import { AdminBlogEditor } from "./components/admin/BlogEditor.tsx";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute.tsx";
+import { FloatingContactRail } from "./components/ui/floating-contact-rail.tsx";
 
 const App = () => (
   <TooltipProvider>
@@ -29,6 +31,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/team" element={<Team />} />
         <Route path="/services" element={<Services />} />
         <Route path="/demo/faq" element={<DemoFaq />} />
@@ -45,6 +48,7 @@ const App = () => (
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <FloatingContactRail />
     </BrowserRouter>
   </TooltipProvider>
 );

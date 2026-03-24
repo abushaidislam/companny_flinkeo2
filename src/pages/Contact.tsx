@@ -1,20 +1,22 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Loader2, MessageCircle, Mail, Twitter } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CalendarDays, Loader2, Mail, MessageCircleMore } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import Navbar from '@/components/landing/Navbar';
 import { Footer } from '@/components/ui/footer-section';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import {
+  buildContactHref,
+  buildWhatsAppHref,
+  companyContact,
+  getIntentCopy,
+  mapServiceToContactSelections,
+} from '@/data/company-contact';
 import { submitContactForm } from '@/lib/supabase';
 
 interface ContactFormData {
@@ -33,7 +35,6 @@ interface FormErrors {
   email?: string;
   phone?: string;
   services?: string;
-  message?: string;
 }
 
 const services = [
@@ -46,21 +47,39 @@ const services = [
 ];
 
 const ContactPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState<ContactFormData>({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    country: 'US',
+    country: 'BD',
     services: [],
     message: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const { toast } = useToast();
 
-  const validateForm = (): boolean => {
+  const intent = searchParams.get('intent');
+  const service = searchParams.get('service');
+  const brief = searchParams.get('brief');
+  const source = searchParams.get('source');
+  const intentCopy = getIntentCopy(intent);
+  const whatsAppHref = buildWhatsAppHref(
+    `Hi Flinke, I want to continue the conversation about my ${service ?? 'project'} inquiry.`,
+  );
+
+  useEffect(() => {
+    setFormData((current) => ({
+      ...current,
+      services: current.services.length > 0 ? current.services : mapServiceToContactSelections(service),
+      message: current.message || brief || current.message,
+    }));
+  }, [brief, service]);
+
+  const validateForm = () => {
     const newErrors: FormErrors = {};
 
     if (!formData.firstName.trim()) {
@@ -104,7 +123,15 @@ const ContactPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Submit to Supabase
+      const leadNotes = [
+        `Intent: ${intent ?? 'booking'}`,
+        source ? `Source: ${source}` : null,
+        '',
+        formData.message || 'No additional project notes were added.',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
       await submitContactForm({
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -112,21 +139,25 @@ const ContactPage = () => {
         phone: formData.phone,
         country: formData.country,
         services: formData.services,
-        message: formData.message,
+        message: leadNotes,
       });
-
-      setIsSubmitting(false);
-      setShowSuccess(true);
 
       toast({
-        title: 'Message Sent!',
-        description: "We'll get back to you within 24 hours.",
+        title: 'Message sent',
+        description: 'We will follow up within 24 hours.',
       });
+
+      navigate(
+        buildContactHref({
+          intent: (intent as 'booking' | 'quote' | 'case-study' | 'support') ?? 'booking',
+          service: service ?? formData.services[0],
+          source: source ?? 'contact-page',
+        }).replace('/contact', '/thank-you'),
+      );
     } catch (error) {
-      setIsSubmitting(false);
       console.error('Failed to submit:', error);
-      const detail =
-        error instanceof Error ? error.message : 'Unknown submission error';
+      const detail = error instanceof Error ? error.message : 'Unknown submission error';
+
       toast({
         title: 'Failed to send message',
         description:
@@ -135,6 +166,8 @@ const ContactPage = () => {
             : detail,
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -147,269 +180,243 @@ const ContactPage = () => {
 
   const handleServiceToggle = (serviceId: string) => {
     setFormData((prev) => {
-      const newServices = prev.services.includes(serviceId)
-        ? prev.services.filter((s) => s !== serviceId)
+      const nextServices = prev.services.includes(serviceId)
+        ? prev.services.filter((item) => item !== serviceId)
         : [...prev.services, serviceId];
-      return { ...prev, services: newServices };
+
+      return { ...prev, services: nextServices };
     });
+
     if (errors.services) {
       setErrors((prev) => ({ ...prev, services: undefined }));
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      country: 'US',
-      services: [],
-      message: '',
-    });
-    setErrors({});
-    setShowSuccess(false);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="pt-24 pb-16">
+      <section className="pt-24 pb-16 md:pt-32 md:pb-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-            {/* Left Side - Form */}
-            <div>
-              <h1 className="text-5xl md:text-6xl font-display font-bold mb-4">
-                Get in touch
-              </h1>
-              <p className="text-text-secondary text-lg mb-8 max-w-md">
-                We're here to help. Chat to our friendly team 24/7 and get set up and ready to go in just 5 minutes.
-              </p>
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_24rem]">
+            <div className="space-y-8">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-text-secondary">
+                  Contact
+                </p>
+                <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-foreground md:text-6xl">
+                  {intentCopy.title}
+                </h1>
+                <p className="mt-5 max-w-2xl text-lg leading-8 text-text-secondary">
+                  {intentCopy.description}
+                </p>
+              </div>
 
-              {/* Quick Contact Options */}
-              <div className="space-y-4 mb-10">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <a
-                  href="#"
-                  className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                  href={buildContactHref({
+                    intent: 'booking',
+                    service: service ?? 'strategy',
+                    source: 'contact-page-card',
+                  })}
+                  className="rounded-[1.5rem] border border-border/70 bg-card/60 p-5 transition-colors hover:border-foreground/20"
                 >
-                  <MessageCircle className="h-5 w-5" />
-                  <span>Start a live chat</span>
+                  <CalendarDays className="h-5 w-5 text-foreground" />
+                  <p className="mt-4 font-medium text-foreground">Strategy Call</p>
+                  <p className="mt-2 text-sm leading-6 text-text-secondary">
+                    Turn this into a scoped next step.
+                  </p>
                 </a>
                 <a
-                  href="mailto:hello@flinke.studio"
-                  className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                  href={whatsAppHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[1.5rem] border border-border/70 bg-card/60 p-5 transition-colors hover:border-foreground/20"
                 >
-                  <Mail className="h-5 w-5" />
-                  <span>Shoot us an email</span>
+                  <MessageCircleMore className="h-5 w-5 text-foreground" />
+                  <p className="mt-4 font-medium text-foreground">WhatsApp</p>
+                  <p className="mt-2 text-sm leading-6 text-text-secondary">
+                    Continue the conversation directly.
+                  </p>
                 </a>
                 <a
-                  href="#"
-                  className="flex items-center gap-3 text-foreground hover:text-primary transition-colors"
+                  href={companyContact.emailHref}
+                  className="rounded-[1.5rem] border border-border/70 bg-card/60 p-5 transition-colors hover:border-foreground/20"
                 >
-                  <Twitter className="h-5 w-5" />
-                  <span>Message us on Twitter</span>
+                  <Mail className="h-5 w-5 text-foreground" />
+                  <p className="mt-4 font-medium text-foreground">Email</p>
+                  <p className="mt-2 text-sm leading-6 text-text-secondary">
+                    Send references, docs, or project notes.
+                  </p>
                 </a>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Name Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-sm font-medium">
-                      First name
-                    </Label>
-                    <Input
-                      id="firstName"
-                      placeholder="First name"
-                      value={formData.firstName}
-                      onChange={(e) =>
-                        handleInputChange('firstName', e.target.value)
-                      }
-                      className={errors.firstName ? 'border-red-500' : ''}
-                    />
-                    {errors.firstName && (
-                      <p className="text-red-500 text-xs">{errors.firstName}</p>
-                    )}
+              <div className="section-shell px-6 py-8 sm:px-8 md:px-10">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First name</Label>
+                      <Input
+                        id="firstName"
+                        placeholder="First name"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        className={errors.firstName ? 'border-red-500' : ''}
+                      />
+                      {errors.firstName ? (
+                        <p className="text-xs text-red-500">{errors.firstName}</p>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last name</Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Last name"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        className={errors.lastName ? 'border-red-500' : ''}
+                      />
+                      {errors.lastName ? (
+                        <p className="text-xs text-red-500">{errors.lastName}</p>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-sm font-medium">
-                      Last name
-                    </Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Last name"
-                      value={formData.lastName}
-                      onChange={(e) =>
-                        handleInputChange('lastName', e.target.value)
-                      }
-                      className={errors.lastName ? 'border-red-500' : ''}
-                    />
-                    {errors.lastName && (
-                      <p className="text-red-500 text-xs">{errors.lastName}</p>
-                    )}
-                  </div>
-                </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@company.com"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className={errors.email ? 'border-red-500' : ''}
+                      />
+                      {errors.email ? (
+                        <p className="text-xs text-red-500">{errors.email}</p>
+                      ) : null}
+                    </div>
 
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@company.com"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs">{errors.email}</p>
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium">
-                    Phone number
-                  </Label>
-                  <div className="flex gap-2">
-                    <select
-                      value={formData.country}
-                      onChange={(e) =>
-                        handleInputChange('country', e.target.value)
-                      }
-                      className="w-20 px-3 py-2 rounded-md border border-input bg-background text-sm"
-                    >
-                      <option value="US">US</option>
-                      <option value="UK">UK</option>
-                      <option value="CA">CA</option>
-                      <option value="AU">AU</option>
-                      <option value="BD">BD</option>
-                    </select>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+1 (555) 000-0000"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className={`flex-1 ${errors.phone ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {errors.phone && (
-                    <p className="text-red-500 text-xs">{errors.phone}</p>
-                  )}
-                </div>
-
-                {/* Services */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Services</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {services.map((service) => (
-                      <div key={service.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={service.id}
-                          checked={formData.services.includes(service.id)}
-                          onCheckedChange={() => handleServiceToggle(service.id)}
-                        />
-                        <Label
-                          htmlFor={service.id}
-                          className="text-sm font-normal cursor-pointer"
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone number</Label>
+                      <div className="flex gap-2">
+                        <select
+                          value={formData.country}
+                          onChange={(e) => handleInputChange('country', e.target.value)}
+                          className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
                         >
-                          {service.label}
-                        </Label>
+                          <option value="BD">BD</option>
+                          <option value="US">US</option>
+                          <option value="UK">UK</option>
+                          <option value="CA">CA</option>
+                          <option value="AU">AU</option>
+                        </select>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder={companyContact.phoneDisplay}
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          className={`flex-1 ${errors.phone ? 'border-red-500' : ''}`}
+                        />
                       </div>
-                    ))}
+                      {errors.phone ? (
+                        <p className="text-xs text-red-500">{errors.phone}</p>
+                      ) : null}
+                    </div>
                   </div>
-                  {errors.services && (
-                    <p className="text-red-500 text-xs">{errors.services}</p>
-                  )}
-                </div>
 
-                {/* Message */}
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-sm font-medium">
-                    Message (optional)
-                  </Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Tell us about your project..."
-                    value={formData.message}
-                    onChange={(e) => handleInputChange('message', e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full bg-foreground hover:bg-foreground/90 text-background"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>Send message</>
-                  )}
-                </Button>
-              </form>
-            </div>
-
-            {/* Right Side - Map */}
-            <div className="hidden lg:block">
-              <div className="sticky top-24 h-[calc(100vh-8rem)] rounded-2xl overflow-hidden bg-muted">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3151.835434509374!2d144.9537353153167!3d-37.81732767975171!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6ad65d4c2b349649%3A0xb6899234e561db11!2sEnvato!5e0!3m2!1sen!2sbd!4v1635064837645!5m2!1sen!2sbd"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, filter: 'grayscale(100%)' }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Office Location"
-                />
-                {/* Location Pin Overlay */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="w-12 h-12 bg-foreground rounded-full flex items-center justify-center shadow-lg">
-                    <div className="w-4 h-4 bg-background rounded-full" />
+                  <div className="space-y-3">
+                    <Label>Services</Label>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {services.map((item) => (
+                        <label
+                          key={item.id}
+                          htmlFor={item.id}
+                          className="flex cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-4 py-3"
+                        >
+                          <Checkbox
+                            id={item.id}
+                            checked={formData.services.includes(item.id)}
+                            onCheckedChange={() => handleServiceToggle(item.id)}
+                          />
+                          <span className="text-sm text-foreground">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {errors.services ? (
+                      <p className="text-xs text-red-500">{errors.services}</p>
+                    ) : null}
                   </div>
-                </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Project brief</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Tell us about your project, timeline, business goal, and the current state of the site or product."
+                      value={formData.message}
+                      onChange={(e) => handleInputChange('message', e.target.value)}
+                      className="min-h-[160px]"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-4 border-t border-border/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="max-w-xl text-sm leading-6 text-text-secondary">
+                      Share enough context and we will respond with a practical recommendation,
+                      not a generic sales email.
+                    </p>
+                    <Button
+                      type="submit"
+                      variant="hero"
+                      size="lg"
+                      className="w-full sm:w-auto"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        intentCopy.buttonLabel
+                      )}
+                    </Button>
+                  </div>
+                </form>
               </div>
             </div>
+
+            <aside className="space-y-4">
+              <div className="rounded-[1.75rem] border border-border/70 bg-[linear-gradient(180deg,hsl(24_20%_9%),hsl(24_14%_14%))] p-6 text-white">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">
+                  Direct contact
+                </p>
+                <div className="mt-5 space-y-4 text-sm leading-6 text-white/78">
+                  <p>{companyContact.email}</p>
+                  <p>{companyContact.phoneDisplay}</p>
+                  <p>Best for strategy calls, redesign scope, and launch planning.</p>
+                </div>
+              </div>
+
+              <div className="rounded-[1.75rem] border border-border/70 bg-card/60 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-text-secondary">
+                  What to send
+                </p>
+                <ul className="mt-4 space-y-3 text-sm leading-6 text-text-secondary">
+                  <li>Current website or product link</li>
+                  <li>Target launch window or decision deadline</li>
+                  <li>Budget range and internal stakeholders</li>
+                  <li>Examples of sites or products you reference</li>
+                </ul>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
       <Footer />
-
-      {/* Success Dialog */}
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <DialogTitle className="text-center text-2xl">
-              Message Sent Successfully!
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              Thank you for reaching out. Our team will review your project details and get back to you within 24 hours.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center mt-6">
-            <Button onClick={resetForm} variant="hero">
-              Send Another Message
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

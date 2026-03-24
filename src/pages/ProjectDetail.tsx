@@ -15,10 +15,15 @@ import {
   TrendingUp,
   CheckCircle2,
   ArrowRight,
+  MessageCircleMore,
   Quote
 } from 'lucide-react';
 import { getProjectBySlug, projects } from '@/data/projects';
 import { useEffect } from 'react';
+import {
+  buildContactHref,
+  buildWhatsAppHref,
+} from '@/data/company-contact';
 
 const ProjectDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -40,6 +45,23 @@ const ProjectDetail = () => {
   const relatedProjects = projects
     .filter(p => p.category === project.category && p.id !== project.id)
     .slice(0, 2);
+  const whatsAppHref = buildWhatsAppHref(
+    `Hi Flinke, I want to discuss a project similar to ${project.title}.`,
+  );
+  const projectSnapshot = [
+    {
+      label: 'Challenge',
+      value: `${project.client} needed a clearer ${project.category.toLowerCase()} direction tied to commercial results.`,
+    },
+    {
+      label: 'Delivery',
+      value: `${project.duration} engagement with a ${project.team.length}-person team and hands-on execution.`,
+    },
+    {
+      label: 'Outcome',
+      value: project.results,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,6 +133,23 @@ const ProjectDetail = () => {
               </CardContent>
             </Card>
           </motion.div>
+        </div>
+      </section>
+
+      <section className="pb-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {projectSnapshot.map((item) => (
+              <Card key={item.label} className="border-border/70">
+                <CardContent className="p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    {item.label}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-foreground/85">{item.value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -296,9 +335,24 @@ const ProjectDetail = () => {
                     <p className="text-sm text-muted-foreground">
                       Let's discuss how we can help transform your business.
                     </p>
-                    <Button className="w-full" onClick={() => navigate('/contact')}>
-                      Start Your Project
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                    <Button className="w-full" asChild>
+                      <a
+                        href={buildContactHref({
+                          intent: 'case-study',
+                          service: project.category.toLowerCase().replace(/\s+/g, '-'),
+                          brief: `I want results similar to ${project.title}.`,
+                          source: project.slug,
+                        })}
+                      >
+                        Start Your Project
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </a>
+                    </Button>
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href={whatsAppHref} target="_blank" rel="noreferrer">
+                        <MessageCircleMore className="h-4 w-4 mr-2" />
+                        Discuss on WhatsApp
+                      </a>
                     </Button>
                     {project.link && (
                       <Button variant="outline" className="w-full" asChild>
