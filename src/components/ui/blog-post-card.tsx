@@ -44,6 +44,8 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   const hasFooter = writer || publishedAt;
   const displayLabel = category || tag || tags?.[0] || "Article";
   const showCover = Boolean(cover) && !hasImageError;
+  const editorialTitleClampClass =
+    "overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-box-orient:vertical]";
 
   useEffect(() => {
     setHasImageError(false);
@@ -78,7 +80,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
 
         <div className="space-y-3 px-1">
           {hasMeta && (
-            <div className="flex flex-wrap items-center gap-2 text-sm text-stone-500">
+            <div className="flex flex-wrap items-center gap-2 text-[0.95rem] text-stone-500">
               <span className="font-medium text-stone-600">{displayLabel}</span>
               {readingTime ? (
                 <>
@@ -92,12 +94,18 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             </div>
           )}
 
-          <h2 className="font-display text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.03em] text-foreground transition-colors duration-300 group-hover:text-primary">
+          <h2
+            className={cn(
+              "font-display text-[1.18rem] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground transition-colors duration-300 group-hover:text-primary sm:text-[1.28rem] md:text-[1.38rem]",
+              editorialTitleClampClass,
+            )}
+            style={{ WebkitLineClamp: 4 }}
+          >
             {headline}
           </h2>
 
           <p
-            className={cn("text-[1.05rem] leading-8 text-muted-foreground", {
+            className={cn("text-[0.98rem] leading-7 text-muted-foreground", {
               "overflow-hidden text-ellipsis [-webkit-box-orient:vertical] [display:-webkit-box]":
                 clampLines && clampLines > 0,
             })}
