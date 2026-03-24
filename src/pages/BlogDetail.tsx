@@ -497,11 +497,20 @@ export default function BlogDetail() {
 
             {/* Related articles */}
             {relatedBlogs.length > 0 && (
-              <section className="mt-12">
-                <h2 className="text-xl font-semibold mb-4">{relatedSectionTitle}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <section className="mt-20 border-t border-border/60 pt-10">
+                <div className="mb-8 flex flex-col gap-2">
+                  <p className="text-sm font-medium uppercase tracking-[0.26em] text-muted-foreground">
+                    Related posts
+                  </p>
+                  <h2 className="text-2xl font-semibold tracking-tight">{relatedSectionTitle}</h2>
+                </div>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
                   {relatedBlogs.map((r) => (
-                    <Link key={r.id} to={`/blog/${r.slug}`}>
+                    <Link
+                      key={r.id}
+                      to={`/blog/${r.slug}`}
+                      className="block transition-transform duration-300 hover:-translate-y-1"
+                    >
                       <ArticleCard
                         headline={r.headline}
                         excerpt={r.excerpt}
@@ -513,6 +522,7 @@ export default function BlogDetail() {
                         writer={r.writer}
                         publishedAt={new Date(r.published_at)}
                         clampLines={2}
+                        variant="editorial"
                       />
                     </Link>
                   ))}

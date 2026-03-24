@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { formatPostDate, formatReadTime } from "@/lib/blog-utils";
 import { cn } from "@/lib/utils";
+import { Clock3 } from "lucide-react";
 
 export interface ArticleCardProps {
   headline: string;
@@ -21,6 +23,7 @@ export interface ArticleCardProps {
   writer?: string;
   publishedAt?: Date;
   clampLines?: number;
+  variant?: "default" | "editorial";
 }
 
 export const ArticleCard: React.FC<ArticleCardProps> = ({
@@ -34,19 +37,91 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   writer,
   publishedAt,
   clampLines,
+  variant = "default",
 }) => {
+  const [hasImageError, setHasImageError] = useState(false);
   const hasMeta = category || tag || tags?.length || readingTime;
   const hasFooter = writer || publishedAt;
+  const displayLabel = category || tag || tags?.[0] || "Article";
+  const showCover = Boolean(cover) && !hasImageError;
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [cover]);
+
+  if (variant === "editorial") {
+    return (
+      <article className="group flex h-full flex-col gap-5">
+        <div className="relative overflow-hidden rounded-[28px] bg-[#ece6da]">
+          <div className="aspect-[1.48] w-full">
+            {showCover ? (
+              <img
+                src={cover}
+                alt={headline}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                onError={() => setHasImageError(true)}
+              />
+            ) : (
+              <div className="flex h-full w-full items-end bg-[linear-gradient(145deg,#f1ebdf_0%,#e5ddd0_45%,#d2c6b7_100%)] p-6">
+                <div className="max-w-[16rem]">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.28em] text-stone-500">
+                    {displayLabel}
+                  </p>
+                  <p className="text-xl font-semibold leading-tight text-stone-800">
+                    Editorial preview
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3 px-1">
+          {hasMeta && (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-stone-500">
+              <span className="font-medium text-stone-600">{displayLabel}</span>
+              {readingTime ? (
+                <>
+                  <span>/</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {Math.max(1, Math.round(readingTime))} min
+                  </span>
+                </>
+              ) : null}
+            </div>
+          )}
+
+          <h2 className="font-display text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.03em] text-foreground transition-colors duration-300 group-hover:text-primary">
+            {headline}
+          </h2>
+
+          <p
+            className={cn("text-[1.05rem] leading-8 text-muted-foreground", {
+              "overflow-hidden text-ellipsis [-webkit-box-orient:vertical] [display:-webkit-box]":
+                clampLines && clampLines > 0,
+            })}
+            style={{
+              WebkitLineClamp: clampLines,
+            }}
+          >
+            {excerpt}
+          </p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <Card className="flex w-full flex-col gap-3 overflow-hidden rounded-3xl border p-3 shadow-lg transition-shadow duration-300 hover:shadow-xl">
-      {cover && (
+      {showCover && (
         <CardHeader className="p-0">
           <div className="relative h-56 w-full">
             <img
               src={cover}
               alt={headline}
               className="h-full w-full rounded-2xl object-cover"
+              onError={() => setHasImageError(true)}
             />
           </div>
         </CardHeader>
