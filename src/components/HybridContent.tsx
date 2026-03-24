@@ -15,6 +15,61 @@ interface HybridContentProps {
   onContentProcessed?: () => void;
 }
 
+function normalizeMermaidSource(raw: string): string {
+  return raw.replace(/^mermaid\s+/i, '').replace(/\r\n/g, '\n').trim();
+}
+
+function looksNarrative(text: string): boolean {
+  return /\b[A-Z][a-z]{2,}\s+[a-z]{2,}\s+[a-z]{2,}/.test(text) || /\b[a-z]{3,}\s+[a-z]{3,}\s+[a-z]{3,}/.test(text);
+}
+
+function buildMermaidRecoveryCandidates(raw: string): string[] {
+  const normalized = normalizeMermaidSource(raw);
+  if (!normalized) return [];
+
+  const candidates = [normalized];
+  const sections = normalized
+    .split(/\n\s*\n/)
+    .map((section) => section.trim())
+    .filter(Boolean);
+
+  if (sections.length > 1 && looksNarrative(sections[sections.length - 1])) {
+    let current = '';
+    sections.slice(0, -1).forEach((section) => {
+      current = current ? `${current}\n\n${section}` : section;
+      candidates.push(current);
+    });
+  }
+
+  const lines = normalized.split('\n');
+  const trailingWindow = lines.slice(Math.max(0, lines.length - 2)).join('\n');
+  if (lines.length > 1 && looksNarrative(trailingWindow)) {
+    for (let end = lines.length - 1; end >= 1; end -= 1) {
+      const candidate = lines.slice(0, end).join('\n').trim();
+      if (candidate) {
+        candidates.push(candidate);
+      }
+    }
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+async function renderMermaidWithRecovery(id: string, raw: string) {
+  const candidates = buildMermaidRecoveryCandidates(raw);
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    try {
+      return await mermaid.render(id, candidate);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+
 /**
  * HybridContent - Renders both HTML and Markdown content
  * Auto-detects content type and applies appropriate rendering
@@ -189,8 +244,6 @@ function HybridContentComponent({ content, className = '', onContentProcessed }:
           const raw = (codeEl.textContent || '').trim();
           if (!raw) return;
 
-          const cleanedRaw = raw.replace(/^mermaid\s+/i, '').trim();
-
           let containerToReplace: HTMLElement | null = null;
           const pre = codeEl.closest('pre') as HTMLElement | null;
           if (pre) {
@@ -211,7 +264,7 @@ function HybridContentComponent({ content, className = '', onContentProcessed }:
           const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
 
           try {
-            mermaid.render(id, cleanedRaw).then(({ svg }) => {
+            renderMermaidWithRecovery(id, raw).then(({ svg }) => {
               if (!isMountedRef.current) return;
               container.innerHTML = `<div class="blog-mermaid__svg-wrap">${svg}</div>`;
               containerToReplace?.parentNode?.replaceChild(container, containerToReplace);

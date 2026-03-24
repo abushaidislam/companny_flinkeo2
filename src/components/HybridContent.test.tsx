@@ -140,6 +140,39 @@ describe('HybridContent special blocks', () => {
     expect(container.querySelector('.blog-mermaid')).toHaveClass('is-visible');
   });
 
+  it('recovers html mermaid blocks when trailing prose is captured in the code node', async () => {
+    mermaidRenderMock.mockImplementationOnce(async (_id: string, code: string) => {
+      if (code.includes('The diagram above shows')) {
+        throw new Error('Parse error');
+      }
+
+      return {
+        svg: `<svg data-testid="mermaid-svg"><text>${code}</text></svg>`,
+      };
+    });
+
+    const content = [
+      '<pre><code class="language-mermaid">',
+      'flowchart TD',
+      'A[HTML] --> B[Diagram]',
+      'B --> C[Review]',
+      'The diagram above shows how the review loop works.',
+      '</code></pre>',
+    ].join('\n');
+
+    const { container } = render(<HybridContent content={content} />);
+
+    await waitFor(() => {
+      expect(mermaidRenderMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(await screen.findByTestId('mermaid-svg')).toBeInTheDocument();
+    expect(container.querySelector('.text-red-500')).toBeNull();
+    expect(mermaidRenderMock.mock.calls[0]?.[1]).toContain('The diagram above shows');
+    expect(mermaidRenderMock.mock.calls[1]?.[1]).not.toContain('The diagram above shows');
+    expect(mermaidRenderMock.mock.calls[1]?.[1]).toContain('B --> C[Review]');
+  });
+
   it('renders markdown references as citations instead of raw html text', async () => {
     const content = [
       'AI is happening now[^1].',
