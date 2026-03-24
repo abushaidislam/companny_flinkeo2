@@ -4,48 +4,62 @@ import { trustSection } from "@/data/landing-content";
 
 const TrustBadgesSection = () => {
   return (
-    <section id="trust" className="border-y border-border/50 bg-muted/30 py-16">
+    <section id="trust" className="py-10 md:py-14">
       <div className="container mx-auto px-4">
-        <div className="mb-10 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-text-secondary">
-            {trustSection.eyebrow}
-          </p>
-        </div>
+        <div className="section-hairline" />
 
-        <div className="mb-10 overflow-hidden rounded-full border border-border bg-card/70 py-4">
-          <div className="relative">
-            <div className="flex gap-8 animate-marquee">
-              {[...trustSection.logos, ...trustSection.logos].map((logo, index) => (
-                <div key={`${logo}-${index}`} className="flex-shrink-0 px-6 py-3">
-                  <span className="whitespace-nowrap text-2xl font-display font-bold text-foreground/80 transition-colors hover:text-foreground md:text-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="grid gap-10 py-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-end"
+        >
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-text-secondary">
+              {trustSection.eyebrow}
+            </p>
+            <p className="max-w-xs text-sm leading-6 text-text-secondary">
+              Selected teams and operators who needed sharper positioning, faster launch flow, and cleaner digital presentation.
+            </p>
+          </div>
+
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
+              {trustSection.logos.map((logo, index) => (
+                <motion.div
+                  key={logo}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.06 }}
+                >
+                  <span className="text-lg font-display font-semibold tracking-tight text-foreground/75 transition-colors duration-300 hover:text-foreground md:text-xl">
                     {logo}
                   </span>
-                </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="grid gap-6 border-t border-border/70 pt-6 sm:grid-cols-3">
+              {trustSection.stats.map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + index * 0.08 }}
+                >
+                  <p className="text-3xl font-display font-bold tracking-tight text-foreground">
+                    {stat.value}
+                  </p>
+                  <p className="mt-2 text-sm text-text-secondary">{stat.label}</p>
+                </motion.div>
               ))}
             </div>
           </div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="grid grid-cols-1 gap-4 text-center md:grid-cols-3"
-        >
-          {trustSection.stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="rounded-2xl border border-border bg-card px-6 py-5"
-            >
-              <p className="text-3xl font-display font-bold text-foreground">{stat.value}</p>
-              <p className="mt-2 text-sm text-text-secondary">{stat.label}</p>
-            </motion.div>
-          ))}
         </motion.div>
+
+        <div className="section-hairline" />
       </div>
     </section>
   );
