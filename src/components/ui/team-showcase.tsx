@@ -398,35 +398,35 @@ export default function TeamShowcase({ members = DEFAULT_MEMBERS }: TeamShowcase
                   )}
                   {selectedMember.social?.linkedin && (
                     <Button variant="outline" size="icon" asChild>
-                      <a href={selectedMember.social.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${selectedMember.name}'s LinkedIn profile`}>
+                      <a href={selectedMember.social.linkedin} target="_blank" rel="noopener noreferrer">
                         <FaLinkedinIn className="h-4 w-4" />
                       </a>
                     </Button>
                   )}
                   {selectedMember.social?.twitter && (
                     <Button variant="outline" size="icon" asChild>
-                      <a href={selectedMember.social.twitter} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${selectedMember.name}'s Twitter profile`}>
+                      <a href={selectedMember.social.twitter} target="_blank" rel="noopener noreferrer">
                         <FaTwitter className="h-4 w-4" />
                       </a>
                     </Button>
                   )}
                   {selectedMember.social?.github && (
                     <Button variant="outline" size="icon" asChild>
-                      <a href={selectedMember.social.github} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${selectedMember.name}'s GitHub profile`}>
+                      <a href={selectedMember.social.github} target="_blank" rel="noopener noreferrer">
                         <FaGithub className="h-4 w-4" />
                       </a>
                     </Button>
                   )}
                   {selectedMember.social?.dribbble && (
                     <Button variant="outline" size="icon" asChild>
-                      <a href={selectedMember.social.dribbble} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${selectedMember.name}'s Dribbble profile`}>
+                      <a href={selectedMember.social.dribbble} target="_blank" rel="noopener noreferrer">
                         <FaDribbble className="h-4 w-4" />
                       </a>
                     </Button>
                   )}
                   {selectedMember.social?.instagram && (
                     <Button variant="outline" size="icon" asChild>
-                      <a href={selectedMember.social.instagram} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${selectedMember.name}'s Instagram profile`}>
+                      <a href={selectedMember.social.instagram} target="_blank" rel="noopener noreferrer">
                         <FaInstagram className="h-4 w-4" />
                       </a>
                     </Button>
