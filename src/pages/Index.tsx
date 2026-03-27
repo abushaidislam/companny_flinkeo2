@@ -1,5 +1,6 @@
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
+import LaunchAssetsSection from "@/components/landing/LaunchAssetsSection";
 import TrustBadgesSection from "@/components/landing/TrustBadgesSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PortfolioSection from "@/components/landing/PortfolioSection";
@@ -16,6 +17,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
+      <LaunchAssetsSection />
       <TrustBadgesSection />
       <FeaturesSection />
       <PortfolioSection />

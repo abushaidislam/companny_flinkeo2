@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
+import HashScrollManager from "./components/HashScrollManager.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { FloatingContactRail } from "./components/ui/floating-contact-rail.tsx";
@@ -54,6 +55,7 @@ const App = () => (
       }}
     >
       <Suspense fallback={<RouteFallback />}>
+        <HashScrollManager />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/contact" element={<Contact />} />

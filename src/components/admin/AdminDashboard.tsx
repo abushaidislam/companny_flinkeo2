@@ -91,7 +91,7 @@ interface Contract {
 }
 
 const BLOG_SELECT =
-  'id, slug, headline, excerpt, tag, tags, writer, status, published_at, created_at, category_id, category:categories(id, name, slug, description, is_active, created_at, updated_at)';
+  'id, slug, headline, excerpt, tag, tags, writer, status, published_at, created_at, category_id, cover_image, reading_time, writer_avatar, category:categories(id, name, slug, description, is_active, created_at, updated_at)';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -150,7 +150,12 @@ export function AdminDashboard() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBlogs(data || []);
+      // Transform category from array to single object (Supabase returns arrays for relationships)
+      const transformedData = (data || []).map((blog: Record<string, unknown>) => ({
+        ...blog,
+        category: Array.isArray(blog.category) ? (blog.category[0] as BlogCategory | null) || null : (blog.category as BlogCategory | null),
+      })) as BlogRecord[];
+      setBlogs(transformedData);
     } catch (error) {
       console.error('Error loading blogs:', error);
       toast.error('Failed to load blogs');
@@ -312,7 +317,7 @@ export function AdminDashboard() {
     }
   };
 
-  const handleToggleStatus = async (blog: Blog) => {
+  const handleToggleStatus = async (blog: BlogRecord) => {
     const newStatus = blog.status === 'published' ? 'draft' : 'published';
     const publishedAt = newStatus === 'published' ? new Date().toISOString() : null;
 
@@ -621,7 +626,7 @@ export function AdminDashboard() {
                 <span className="text-sm font-medium truncate">{user?.email}</span>
                 <span className="text-xs text-muted-foreground">Administrator</span>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Log out">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -863,6 +868,7 @@ export function AdminDashboard() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleToggleStatus(blog)}
+                                    aria-label={blog.status === 'published' ? 'Unpublish blog' : 'Publish blog'}
                                     title={blog.status === 'published' ? 'Unpublish' : 'Publish'}
                                   >
                                     {blog.status === 'published' ? (
@@ -875,6 +881,7 @@ export function AdminDashboard() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => navigate(`/admin/blog/edit/${blog.id}`)}
+                                    aria-label="Edit blog"
                                   >
                                     <Edit2 className="h-4 w-4" />
                                   </Button>
@@ -882,6 +889,7 @@ export function AdminDashboard() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleDelete(blog.id)}
+                                    aria-label="Delete blog"
                                     className="text-red-600 hover:text-red-700"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -958,6 +966,7 @@ export function AdminDashboard() {
                               size="icon"
                               onClick={() => handleDeleteContact(contact.id)}
                               className="text-red-600 hover:text-red-700 h-8 w-8"
+                              aria-label="Delete contact"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

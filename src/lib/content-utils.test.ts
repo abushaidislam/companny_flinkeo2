@@ -35,6 +35,21 @@ describe('normalizeBlogDetailContent', () => {
 
     expect(normalizeBlogDetailContent(content, 'The AI Revolution')).toBe('<p>Intro paragraph.</p>');
   });
+
+  it('strips leading markdown frontmatter before rendering the blog body', () => {
+    const content = [
+      '---',
+      'title: "The AI Revolution"',
+      'slug: "the-ai-revolution"',
+      '---',
+      '',
+      '# The AI Revolution',
+      '',
+      'Intro paragraph.',
+    ].join('\n');
+
+    expect(normalizeBlogDetailContent(content, 'The AI Revolution')).toBe('Intro paragraph.');
+  });
 });
 
 describe('containsBengaliText', () => {

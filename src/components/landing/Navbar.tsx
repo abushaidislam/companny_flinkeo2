@@ -1,19 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import {
   Building2,
+  CalendarDays,
   CodeIcon,
-  FileText,
   GlobeIcon,
   Handshake,
   HelpCircle,
   Leaf,
   Palette,
   PenTool,
-  RotateCcw,
   Search,
-  Shield,
   Smartphone,
   Star,
   Users,
@@ -107,11 +105,11 @@ const companyLinks: LinkItem[] = [
 ];
 
 const companyLinks2: LinkItem[] = [
-  { title: 'Terms of Service', href: '#', icon: FileText },
-  { title: 'Privacy Policy', href: '#', icon: Shield },
-  { title: 'Refund Policy', href: '#', icon: RotateCcw },
+  { title: 'Launch Kit', href: '/#launch-assets', icon: CalendarDays },
   { title: 'Blog', href: '/blog', icon: Leaf },
   { title: 'Help Center', href: '/#faq', icon: HelpCircle },
+  { title: 'Pricing Snapshot', href: '/#pricing', icon: Search },
+  { title: 'Contact', href: '/contact', icon: Users },
 ];
 
 function useScroll(threshold: number) {
@@ -136,7 +134,7 @@ function useScroll(threshold: number) {
 const Navbar = () => {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
-  const location = window.location;
+  const location = useLocation();
 
   React.useEffect(() => {
     setOpen(false);
@@ -240,19 +238,19 @@ const Navbar = () => {
 
               <NavigationMenuItem>
                 <Link
-                  to="/#pricing"
+                  to="/#launch-assets"
                   className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus:bg-accent/60 focus:text-foreground focus:outline-none"
                 >
-                  Pricing
+                  Launch Kit
                 </Link>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <Link
-                  to="/#work"
+                  to="/#pricing"
                   className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus:bg-accent/60 focus:text-foreground focus:outline-none"
                 >
-                  Work
+                  Pricing
                 </Link>
               </NavigationMenuItem>
 
@@ -276,7 +274,7 @@ const Navbar = () => {
             className="text-muted-foreground hover:text-foreground"
             asChild
           >
-            <Link to="/#work">Our Work</Link>
+            <Link to="/#launch-assets">Launch Kit</Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
             <Link to={bookingConsultationHref}>{primaryConsultationLabel}</Link>

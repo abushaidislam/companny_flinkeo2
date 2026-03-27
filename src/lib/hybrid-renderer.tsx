@@ -3,17 +3,21 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeKatex from 'rehype-katex';
 import 'highlight.js/styles/github-dark.css';
+import DOMPurify from 'dompurify';
 import type { ReactNode } from 'react';
 import * as React from 'react';
 import type { ChartData, ChartType } from 'chart.js';
 import { References } from '@/components/References';
 import { loadChartJs, loadMermaid } from '@/lib/blog-visuals';
 import { hasReferences, parseReferences } from '@/lib/reference-parser';
-import { containsBengaliText } from '@/lib/content-utils';
+import { containsBengaliText, stripMarkdownFrontmatter } from '@/lib/content-utils';
 
 type MarkdownNode = {
   type?: string;
@@ -149,6 +153,11 @@ function isMermaidLanguage(className?: string) {
 function isChartLanguage(className?: string) {
   const cls = (className || '').toLowerCase();
   return cls.includes('language-chart') || cls.includes('lang-chart') || cls.includes('chart');
+}
+
+function looksLikeStandaloneSvg(raw: string) {
+  const normalized = raw.trim();
+  return normalized.startsWith('<svg') && normalized.endsWith('</svg>');
 }
 
 type ChartSpec = {
@@ -304,6 +313,22 @@ function MermaidBlock({ raw }: { raw: string }) {
   );
 }
 
+function SvgBlock({ raw }: { raw: string }) {
+  const sanitized = React.useMemo(
+    () =>
+      DOMPurify.sanitize(raw, {
+        USE_PROFILES: { svg: true, svgFilters: true, html: false },
+      }),
+    [raw],
+  );
+
+  return (
+    <div className="blog-svg blog-reveal is-visible" data-special-block="svg">
+      <div className="blog-svg__frame" dangerouslySetInnerHTML={{ __html: sanitized }} />
+    </div>
+  );
+}
+
 /**
  * ReactMarkdown wrapper with full plugin support
  */
@@ -316,7 +341,8 @@ function MarkdownRendererComponent({
   children?: ReactNode;
   className?: string;
 }) {
-  const textContent = content || (typeof children === 'string' ? children : '');
+  const rawContent = content || (typeof children === 'string' ? children : '');
+  const textContent = stripMarkdownFrontmatter(rawContent);
   const contentLang = containsBengaliText(textContent) ? 'bn' : undefined;
 
   // Parse references from markdown content
@@ -328,8 +354,10 @@ function MarkdownRendererComponent({
   return (
     <div className={`prose prose-lg dark:prose-invert max-w-none ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[
+          rehypeRaw,
+          rehypeKatex,
           rehypeSlug,
           [rehypeAutolinkHeadings, { behavior: 'wrap' }],
           rehypeHighlight,
@@ -339,7 +367,12 @@ function MarkdownRendererComponent({
         pre: ({ children }) => {
           const firstChild = React.Children.count(children) === 1 ? React.Children.only(children) : null;
 
-          if (React.isValidElement(firstChild) && (firstChild.type === ChartBlock || firstChild.type === MermaidBlock)) {
+          if (
+            React.isValidElement(firstChild) &&
+            (firstChild.type === ChartBlock ||
+              firstChild.type === MermaidBlock ||
+              firstChild.type === SvgBlock)
+          ) {
             return firstChild;
           }
 
@@ -373,6 +406,10 @@ function MarkdownRendererComponent({
 
           if (language === 'mermaid' || isMermaidLanguage(className) || looksLikeMermaid(raw)) {
             return <MermaidBlock raw={raw} />;
+          }
+
+          if ((language === 'html' || language === 'svg') && looksLikeStandaloneSvg(raw)) {
+            return <SvgBlock raw={raw} />;
           }
 
           return (

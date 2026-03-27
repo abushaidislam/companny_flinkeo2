@@ -241,7 +241,7 @@ const PortfolioSection = () => {
                   </Button>
                   {selectedProject.link && selectedProject.link !== "#" ? (
                     <Button variant="outline" size="icon" asChild>
-                      <a href={selectedProject.link} target="_blank" rel="noopener noreferrer">
+                      <a href={selectedProject.link} target="_blank" rel="noopener noreferrer" aria-label="View live project">
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     </Button>

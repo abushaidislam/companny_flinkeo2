@@ -44,6 +44,12 @@ export function containsBengaliText(content: string): boolean {
   return /[\u0980-\u09FF]/.test(content);
 }
 
+export function stripMarkdownFrontmatter(content: string): string {
+  if (!content) return content;
+
+  return content.replace(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n*/, '');
+}
+
 function normalizeHeadingText(text: string): string {
   return text
     .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
@@ -58,25 +64,28 @@ function normalizeHeadingText(text: string): string {
  * This keeps the detail view from showing the same title twice.
  */
 export function normalizeBlogDetailContent(content: string, headline: string): string {
-  if (!content || !headline) return content;
+  if (!content) return content;
+
+  const contentWithoutFrontmatter = stripMarkdownFrontmatter(content);
+  if (!headline) return contentWithoutFrontmatter;
 
   const normalizedHeadline = normalizeHeadingText(headline);
-  const contentType = detectContentType(content);
+  const contentType = detectContentType(contentWithoutFrontmatter);
 
   if (contentType === 'markdown') {
-    const headingMatch = content.match(/^\s*#\s+(.+?)\s*(?:\r?\n|$)/);
-    if (!headingMatch) return content;
+    const headingMatch = contentWithoutFrontmatter.match(/^\s*#\s+(.+?)\s*(?:\r?\n|$)/);
+    if (!headingMatch) return contentWithoutFrontmatter;
 
     if (normalizeHeadingText(headingMatch[1]) !== normalizedHeadline) {
-      return content;
+      return contentWithoutFrontmatter;
     }
 
-    return content.replace(/^\s*#\s+(.+?)\s*(\r?\n)+/, '').trimStart();
+    return contentWithoutFrontmatter.replace(/^\s*#\s+(.+?)\s*(\r?\n)+/, '').trimStart();
   }
 
   if (typeof DOMParser !== 'undefined') {
     const parser = new DOMParser();
-    const doc = parser.parseFromString(content, 'text/html');
+    const doc = parser.parseFromString(contentWithoutFrontmatter, 'text/html');
     const firstElement = doc.body.firstElementChild;
 
     if (
@@ -88,7 +97,7 @@ export function normalizeBlogDetailContent(content: string, headline: string): s
     }
   }
 
-  return content;
+  return contentWithoutFrontmatter;
 }
 
 /**

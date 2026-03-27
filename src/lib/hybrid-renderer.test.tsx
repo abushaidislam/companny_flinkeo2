@@ -52,4 +52,50 @@ describe('MarkdownRenderer mermaid recovery', () => {
     expect(mermaidRenderMock.mock.calls[1]?.[1]).not.toContain('The diagram above shows');
     expect(mermaidRenderMock.mock.calls[1]?.[1]).toContain('D --> E[New Job Categories]');
   });
+
+  it('renders inline svg markup as actual content instead of escaped text', () => {
+    const content = [
+      'Before diagram.',
+      '',
+      '<svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">',
+      '  <rect x="10" y="10" width="80" height="20" rx="6"></rect>',
+      '</svg>',
+    ].join('\n');
+
+    const { container } = render(<MarkdownRenderer content={content} />);
+
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.querySelector('rect')).not.toBeNull();
+  });
+
+  it('renders fenced html svg blocks as visual svg output', () => {
+    const content = [
+      '```html',
+      '<svg viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">',
+      '  <rect x="10" y="10" width="100" height="20" rx="8"></rect>',
+      '</svg>',
+      '```',
+    ].join('\n');
+
+    const { container } = render(<MarkdownRenderer content={content} />);
+
+    expect(container.querySelector('.blog-svg')).not.toBeNull();
+    expect(container.querySelector('.blog-svg svg')).not.toBeNull();
+  });
+
+  it('renders markdown math expressions with katex markup', () => {
+    const content = [
+      'Inline math $E = mc^2$ appears in a sentence.',
+      '',
+      '$$',
+      'y = mx + c',
+      '$$',
+    ].join('\n');
+
+    const { container } = render(<MarkdownRenderer content={content} />);
+
+    expect(container.querySelector('.katex')).not.toBeNull();
+    expect(container.textContent).toContain('Inline math');
+    expect(container.textContent).toContain('y = mx + c');
+  });
 });

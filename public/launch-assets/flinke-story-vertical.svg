@@ -1,0 +1,39 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="1920" fill="#F7F0E7"/>
+  <rect x="54" y="54" width="972" height="1812" rx="42" fill="#2A211C"/>
+  <circle cx="820" cy="268" r="220" fill="url(#paint0_radial)" fill-opacity="0.84"/>
+  <circle cx="208" cy="1596" r="250" fill="url(#paint1_radial)" fill-opacity="0.72"/>
+  <rect x="104" y="118" width="234" height="58" rx="29" fill="#F7F0E7" fill-opacity="0.1" stroke="#F7F0E7" stroke-opacity="0.2"/>
+  <text x="221" y="155" fill="#F7F0E7" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="0.24em" text-anchor="middle">FLINKE</text>
+  <text x="104" y="302" fill="#E9CFA8" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="0.34em">STORY TEMPLATE</text>
+  <text x="104" y="470" fill="#FFF8F0" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="120" font-weight="800">
+    <tspan x="104" dy="0">Go Live</tspan>
+    <tspan x="104" dy="118">With</tspan>
+    <tspan x="104" dy="118">Clarity</tspan>
+  </text>
+  <text x="104" y="906" fill="#E8D9C9" font-family="'Inter', Arial, sans-serif" font-size="34" font-weight="500">
+    Countdown, reminder, and behind-the-scenes story asset for the website launch.
+  </text>
+  <rect x="104" y="1012" width="872" height="420" rx="34" fill="#F7F0E7" fill-opacity="0.06" stroke="#F7F0E7" stroke-opacity="0.12"/>
+  <text x="148" y="1098" fill="#F7F0E7" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="0.24em">USE THIS FRAME FOR</text>
+  <text x="148" y="1188" fill="#FFF8F0" font-family="'Inter', Arial, sans-serif" font-size="34" font-weight="500">
+    <tspan x="148" dy="0">01  Countdown reminders</tspan>
+    <tspan x="148" dy="78">02  Team shout-outs</tspan>
+    <tspan x="148" dy="78">03  Product preview clips</tspan>
+  </text>
+  <rect x="104" y="1544" width="414" height="150" rx="32" fill="#F7F0E7"/>
+  <text x="311" y="1616" fill="#2A211C" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="0.16em" text-anchor="middle">NEW SITE</text>
+  <text x="311" y="1666" fill="#5C4939" font-family="'Inter', Arial, sans-serif" font-size="34" font-weight="500" text-anchor="middle">flinke.studio</text>
+  <text x="650" y="1608" fill="#F7F0E7" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="0.24em">TURN ATTENTION</text>
+  <text x="650" y="1658" fill="#D7C0A8" font-family="'Inter', Arial, sans-serif" font-size="30" font-weight="500">into inquiries</text>
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(820 268) rotate(90) scale(220)">
+      <stop stop-color="#E6C79D"/>
+      <stop offset="1" stop-color="#E6C79D" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="paint1_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(208 1596) rotate(90) scale(250)">
+      <stop stop-color="#B69274"/>
+      <stop offset="1" stop-color="#B69274" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

@@ -1,0 +1,32 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="1080" rx="48" fill="#211914"/>
+  <circle cx="866" cy="196" r="218" fill="url(#paint0_radial)" fill-opacity="0.82"/>
+  <circle cx="184" cy="934" r="196" fill="url(#paint1_radial)" fill-opacity="0.58"/>
+  <rect x="74" y="74" width="932" height="932" rx="36" stroke="#F3E8DA" stroke-opacity="0.18" stroke-width="2"/>
+  <text x="118" y="178" fill="#E7CBA4" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="0.3em">NOW LIVE</text>
+  <text x="118" y="336" fill="#FFF8F0" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="104" font-weight="800">
+    <tspan x="118" dy="0">Flinke</tspan>
+    <tspan x="118" dy="104">Launch</tspan>
+    <tspan x="118" dy="104">Week</tspan>
+  </text>
+  <text x="118" y="690" fill="#E6D8C8" font-family="'Inter', Arial, sans-serif" font-size="32" font-weight="500">
+    Websites and product experiences built to turn
+  </text>
+  <text x="118" y="738" fill="#E6D8C8" font-family="'Inter', Arial, sans-serif" font-size="32" font-weight="500">
+    attention into inquiries.
+  </text>
+  <line x1="118" y1="804" x2="962" y2="804" stroke="#F3E8DA" stroke-opacity="0.16"/>
+  <text x="118" y="878" fill="#FFF8F0" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="0.22em">SHARE THE NEW SITE</text>
+  <text x="118" y="930" fill="#D8C3AB" font-family="'Inter', Arial, sans-serif" font-size="28" font-weight="500">Feed post template for launch announcements and recap slides.</text>
+  <text x="118" y="990" fill="#C9B39A" font-family="'Inter', Arial, sans-serif" font-size="24" font-weight="500">flinke.studio</text>
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(866 196) rotate(90) scale(218)">
+      <stop stop-color="#C9A887"/>
+      <stop offset="1" stop-color="#C9A887" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="paint1_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(184 934) rotate(90) scale(196)">
+      <stop stop-color="#F1D6B0"/>
+      <stop offset="1" stop-color="#F1D6B0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

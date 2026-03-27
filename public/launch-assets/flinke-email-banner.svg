@@ -1,0 +1,28 @@
+<svg width="1600" height="720" viewBox="0 0 1600 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="720" rx="40" fill="#211914"/>
+  <circle cx="1310" cy="122" r="246" fill="url(#paint0_radial)" fill-opacity="0.82"/>
+  <circle cx="278" cy="624" r="224" fill="url(#paint1_radial)" fill-opacity="0.64"/>
+  <rect x="52" y="52" width="1496" height="616" rx="30" stroke="#F3E8DA" stroke-opacity="0.16" stroke-width="2"/>
+  <text x="112" y="150" fill="#E7CBA4" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="0.32em">FLINKE LAUNCH UPDATE</text>
+  <text x="112" y="304" fill="#FFF8F0" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="98" font-weight="800">
+    <tspan x="112" dy="0">The new site is live.</tspan>
+    <tspan x="112" dy="104">Share the launch.</tspan>
+  </text>
+  <text x="112" y="512" fill="#E6D8C8" font-family="'Inter', Arial, sans-serif" font-size="34" font-weight="500">
+    Horizontal banner for outbound email, partner decks, and press-kit updates.
+  </text>
+  <rect x="112" y="558" width="274" height="86" rx="22" fill="#F3E8DA"/>
+  <text x="249" y="610" fill="#211914" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="0.12em" text-anchor="middle">NOW LIVE</text>
+  <text x="249" y="640" fill="#5B493A" font-family="'Inter', Arial, sans-serif" font-size="22" font-weight="500" text-anchor="middle">flinke.studio</text>
+  <text x="1140" y="586" fill="#D1B79A" font-family="'Inter', Arial, sans-serif" font-size="24" font-weight="500">Poster • Social • Story • Email</text>
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1310 122) rotate(90) scale(246)">
+      <stop stop-color="#C9A887"/>
+      <stop offset="1" stop-color="#C9A887" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="paint1_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(278 624) rotate(90) scale(224)">
+      <stop stop-color="#F1D6B0"/>
+      <stop offset="1" stop-color="#F1D6B0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

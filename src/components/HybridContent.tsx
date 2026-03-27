@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import type { Chart, ChartData, ChartType } from 'chart.js';
 import { loadChartJs, loadKatexAutoRender, loadMermaid } from '@/lib/blog-visuals';
 import { MarkdownRenderer } from '@/lib/hybrid-renderer';
-import { containsBengaliText, detectContentType } from '@/lib/content-utils';
+import { containsBengaliText, detectContentType, stripMarkdownFrontmatter } from '@/lib/content-utils';
 import { generateReferencesHtml, hasReferences, parseReferences } from '@/lib/reference-parser';
 import 'katex/dist/katex.min.css';
 
@@ -109,6 +109,20 @@ function isMermaidCodeBlock(code: Element) {
   return classLooksMermaid || looksLikeMermaid || startsWithMermaidButMissingFenceLanguage;
 }
 
+function isSvgCodeBlock(code: Element) {
+  const className = (code as HTMLElement).className || '';
+  const cls = className.toLowerCase();
+  const raw = ((code as HTMLElement).textContent || '').trim();
+
+  const classLooksSvg =
+    cls.includes('language-html') ||
+    cls.includes('lang-html') ||
+    cls.includes('language-svg') ||
+    cls.includes('lang-svg');
+
+  return classLooksSvg && raw.startsWith('<svg') && raw.endsWith('</svg>');
+}
+
 function findVisualContainer(codeEl: HTMLElement) {
   const pre = codeEl.closest('pre') as HTMLElement | null;
   if (pre) {
@@ -132,8 +146,12 @@ function HybridContentComponent({
   const contentRef = useRef<HTMLDivElement>(null);
   const chartInstancesRef = useRef<Chart[]>([]);
   const isMountedRef = useRef(true);
-  const contentType = useMemo(() => detectContentType(content), [content]);
-  const contentLang = useMemo(() => (containsBengaliText(content) ? 'bn' : undefined), [content]);
+  const normalizedContent = useMemo(() => stripMarkdownFrontmatter(content), [content]);
+  const contentType = useMemo(() => detectContentType(normalizedContent), [normalizedContent]);
+  const contentLang = useMemo(
+    () => (containsBengaliText(normalizedContent) ? 'bn' : undefined),
+    [normalizedContent],
+  );
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -288,9 +306,33 @@ function HybridContentComponent({
           }
         }
 
+        const svgBlocks = Array.from(root.querySelectorAll('code')).filter(isSvgCodeBlock) as HTMLElement[];
+
+        if (svgBlocks.length > 0 && !cancelled) {
+          svgBlocks.forEach((codeEl) => {
+            const raw = (codeEl.textContent || '').trim();
+            if (!raw) return;
+
+            const containerToReplace = findVisualContainer(codeEl);
+            if (!containerToReplace) return;
+
+            const container = document.createElement('div');
+            container.className = 'blog-svg blog-reveal is-visible';
+
+            const frame = document.createElement('div');
+            frame.className = 'blog-svg__frame';
+            frame.innerHTML = DOMPurify.sanitize(raw, {
+              USE_PROFILES: { svg: true, svgFilters: true, html: false },
+            });
+
+            container.appendChild(frame);
+            containerToReplace.parentNode?.replaceChild(container, containerToReplace);
+          });
+        }
+
         root.querySelectorAll('pre').forEach((pre) => {
           const preEl = pre as HTMLElement;
-          if (preEl.closest('.blog-mermaid') || preEl.closest('.blog-chart')) return;
+          if (preEl.closest('.blog-mermaid') || preEl.closest('.blog-chart') || preEl.closest('.blog-svg')) return;
 
           const code = preEl.querySelector('code');
           if (!code) return;
@@ -397,7 +439,7 @@ function HybridContentComponent({
       }
       chartInstancesRef.current.forEach((chart) => chart.destroy());
     };
-  }, [content, contentType, onContentProcessed]);
+  }, [normalizedContent, contentType, onContentProcessed]);
 
   if (contentType === 'markdown') {
     return (
@@ -406,14 +448,14 @@ function HybridContentComponent({
         className={`blog-content markdown-content ${className}`}
         lang={contentLang}
       >
-        <MarkdownRenderer content={content} />
+        <MarkdownRenderer content={normalizedContent} />
       </div>
     );
   }
 
-  let htmlContent = content;
-  if (hasReferences(content)) {
-    const parsed = parseReferences(content);
+  let htmlContent = normalizedContent;
+  if (hasReferences(normalizedContent)) {
+    const parsed = parseReferences(normalizedContent);
     htmlContent = parsed.content + generateReferencesHtml(parsed.references);
   }
   const sanitized = DOMPurify.sanitize(htmlContent);

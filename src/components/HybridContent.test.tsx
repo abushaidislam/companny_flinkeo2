@@ -140,6 +140,24 @@ describe('HybridContent special blocks', () => {
     expect(container.querySelector('.blog-mermaid')).toHaveClass('is-visible');
   });
 
+  it('upgrades html svg code blocks into rendered svg output', async () => {
+    const content = [
+      '<pre><code class="language-html">',
+      '&lt;svg viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg"&gt;',
+      '&lt;rect x="10" y="10" width="100" height="20" rx="8"&gt;&lt;/rect&gt;',
+      '&lt;/svg&gt;',
+      '</code></pre>',
+    ].join('\n');
+
+    const { container } = render(<HybridContent content={content} />);
+
+    await waitFor(() => {
+      expect(container.querySelector('.blog-svg svg')).not.toBeNull();
+    });
+
+    expect(container.querySelector('.blog-svg')).toHaveClass('is-visible');
+  });
+
   it('recovers html mermaid blocks when trailing prose is captured in the code node', async () => {
     mermaidRenderMock.mockImplementationOnce(async (_id: string, code: string) => {
       if (code.includes('The diagram above shows')) {

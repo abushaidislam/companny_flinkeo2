@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   build: {
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -49,10 +50,23 @@ export default defineConfig(({ mode }) => ({
             return "motion-vendor";
           }
 
-          return undefined;
+          if (id.includes("recharts")) {
+            return "charts-vendor";
+          }
+
+          if (id.includes("lucide-react") || id.includes("react-icons")) {
+            return "icons-vendor";
+          }
+
+          if (id.includes("@radix-ui/")) {
+            return "ui-vendor";
+          }
+
+          return "vendor";
         },
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   resolve: {
     alias: {

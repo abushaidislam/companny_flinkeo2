@@ -62,7 +62,8 @@ import DOMPurify from 'dompurify';
 import { HybridContent } from '@/components/HybridContent';
 import { supabase } from '@/lib/supabase';
 import { detectContentType } from '@/lib/content-utils';
-import mermaid from 'mermaid';
+import { loadMermaid } from '@/lib/blog-visuals';
+import 'katex/dist/katex.min.css';
 
 interface RichTextEditorProps {
   content: string;
@@ -91,15 +92,15 @@ const highlightColors = [
   '#e5e7eb', '#d1d5db', '#9ca3af'
 ];
 
-function ToolbarButton({ 
-  onClick, 
-  isActive, 
-  icon: Icon, 
+function ToolbarButton({
+  onClick,
+  isActive,
+  icon: Icon,
   tooltip,
-  disabled = false 
-}: { 
-  onClick: () => void; 
-  isActive?: boolean; 
+  disabled = false
+}: {
+  onClick: () => void;
+  isActive?: boolean;
   icon: React.ElementType;
   tooltip: string;
   disabled?: boolean;
@@ -112,6 +113,7 @@ function ToolbarButton({
           size="sm"
           onClick={onClick}
           disabled={disabled}
+          aria-label={tooltip}
           className={`h-8 w-8 p-0 ${isActive ? 'bg-accent text-accent-foreground' : ''}`}
         >
           <Icon className="h-4 w-4" />
@@ -224,28 +226,30 @@ export function RichTextEditor({
     if (!previewRef.current) return;
     if (viewMode !== 'preview' && viewMode !== 'split') return;
     if (codeModeRef.current === 'mdx') return;
-    
+
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       if (!previewRef.current) return;
       if (codeModeRef.current === 'mdx') return;
-      
-      // Initialize mermaid
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'default',
-        securityLevel: 'loose',
-      });
-      
-      // Run mermaid on all elements with .mermaid class
-      mermaid.run({
-        querySelector: '.mermaid',
-        nodes: previewRef.current.querySelectorAll('.mermaid'),
-      }).catch((error) => {
-        console.error('Mermaid rendering error:', error);
+
+      // Load and initialize mermaid dynamically
+      loadMermaid().then((mermaidInstance) => {
+        mermaidInstance.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose',
+        });
+
+        // Run mermaid on all elements with .mermaid class
+        mermaidInstance.run({
+          querySelector: '.mermaid',
+          nodes: previewRef.current!.querySelectorAll('.mermaid'),
+        }).catch((error) => {
+          console.error('Mermaid rendering error:', error);
+        });
       });
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [content, viewMode]);
 
